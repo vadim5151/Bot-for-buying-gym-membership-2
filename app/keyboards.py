@@ -1,0 +1,257 @@
+from datetime import datetime as dt, timedelta
+
+from aiogram.types import (InlineKeyboardMarkup, InlineKeyboardButton,
+                           ReplyKeyboardMarkup, KeyboardButton)
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+
+
+def create_more_btn(url_article):
+    builder = InlineKeyboardBuilder()
+
+    builder.button(text='Узнать больше', url=url_article)
+    
+    builder.adjust()
+    return builder.as_markup()
+
+
+def create_user_btn_price_list(months):
+    builder = InlineKeyboardBuilder()
+    for month in sorted(months):
+        if month == 1:
+            builder.button(text=f'Купить {month} месяц', callback_data=f'buy_{month}_month')
+        elif month>1 and month<5:
+            builder.button(text=f'Купить {month} месяца', callback_data=f'buy_{month}_month')
+        else:
+            builder.button(text=f'Купить {month} месяцев', callback_data=f'buy_{month}_month')
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_admin_price_list(months):
+    builder = InlineKeyboardBuilder()
+    for month in sorted(months):
+        if month == 1:
+            builder.button(text=f'редактировать {month} месяц 📝', callback_data=f'edit_{month}_month')
+        elif month>1 and month<5:
+            builder.button(text=f'редактировать {month} месяца 📝', callback_data=f'edit_{month}_month')
+        else:
+            builder.button(text=f'редактировать {month} месяцев 📝', callback_data=f'edit_{month}_month')
+    builder.button(text='Добавить период 🗓️➕', callback_data='add_price')
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def setting_notifications_payment_kb(available_periods, user_periods):
+    builder = InlineKeyboardBuilder()
+
+    for available_period in available_periods:
+        if available_period == 1:
+            builder.button(text=f'За день {"✅" if available_period in user_periods else "❌"}', callback_data='toggle_1')
+        elif available_period == 7:    
+            builder.button(text=f'За неделю {"✅" if available_period in user_periods else "❌"}', callback_data='toggle_7')
+        elif available_period == 14:
+            builder.button(text=f'За 2 недели {"✅" if available_period in user_periods else "❌"}', callback_data='toggle_14')
+        elif available_period == 30 or available_period == 31:
+            builder.button(text=f'За месяц {"✅" if available_period in user_periods else "❌"}', callback_data=f'toggle_{available_period}')
+        elif 2<=available_period<5:
+            builder.button(text=f'За {available_period} дня  {"✅" if available_period in user_periods else "❌"}', callback_data=f'toggle_{available_period}')
+        else:
+            builder.button(text=f'За {available_period} дней {"✅" if available_period in user_periods else "❌"}', callback_data=f'toggle_{available_period}')
+
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_main_menu_keyboards(isAdmin:bool):
+    user_menu = ReplyKeyboardMarkup(keyboard=[
+        [KeyboardButton(text='Прайс'), KeyboardButton(text='Остатки по тарифу')],
+        [KeyboardButton(text='Настройка уведомлений'), KeyboardButton(text='Мой профиль')]
+    ], resize_keyboard=True)
+        
+    admin_menu = ReplyKeyboardMarkup(keyboard=[
+        [KeyboardButton(text='Редактирование прайса 🔧 ')], 
+        [KeyboardButton(text='Статистика 📊')],
+        [KeyboardButton(text='Просмотр всех оплат 💰')]
+    ], resize_keyboard=True)
+
+    if isAdmin == True:
+        return admin_menu
+    else:
+        return user_menu
+
+
+def get_month_selector_keyboard():
+
+    current_date = dt.now()
+
+    current_year = current_date.year
+    current_month = current_date.month
+
+    month_names = {
+        1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель", 
+        5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
+        9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"
+    }
+
+    current_month_name = month_names.get(current_month, '')
+
+    prev_month_date = current_date - timedelta(days=current_date.day)
+    prev_prev_month_date = prev_month_date - timedelta(days=prev_month_date.day)
+
+    prev_month_name = month_names.get(prev_month_date.month, '')
+    prev_prev_month_name = month_names.get(prev_prev_month_date.month, '')
+
+    builder = InlineKeyboardBuilder()
+
+    builder.row(
+        InlineKeyboardButton(text=f'{prev_prev_month_name} {prev_prev_month_date.year}', callback_data='select_month_last'),
+        InlineKeyboardButton(text=f'{prev_month_name} {prev_month_date.year}', callback_data='select_month_prev'),
+        InlineKeyboardButton(text=f'{current_month_name} {current_year}', callback_data='select_month_current')
+    )
+
+    builder.row(
+        InlineKeyboardButton(text='Отмена', callback_data='cancel_select'),
+    )
+
+    return builder.as_markup()
+
+
+def get_quarter_select_keybord():
+    current_date = dt.now()
+
+    current_quarter = ''
+    one_quarter = ''
+    two_quarter = ''
+    three_quarter = ''
+    four_quarter = ''
+
+    text = ''
+
+    if 1<=current_date.month<4:
+        current_quarter += f'I-{current_date.year}'
+
+        four_quarter += f'IV-{current_date.year - 1}'
+        three_quarter += f'III-{current_date.year - 1}'
+        two_quarter += f'II-{current_date.year - 1}'
+
+        text += f'{two_quarter} {three_quarter} {four_quarter} {current_quarter}'
+
+    elif 4<=current_date.month<7:
+        current_quarter += f'II-{current_date.year}'
+
+        one_quarter += f'I-{current_date.year}'
+        four_quarter += f'IV-{current_date.year - 1}'
+        three_quarter += f'III-{current_date.year - 1}'
+
+        text += f'{three_quarter} {four_quarter} {one_quarter} {current_quarter}'
+        
+    elif 7<=current_date.month<10:
+        current_quarter += f'III {current_date.year}'
+
+        two_quarter += f'II-{current_date.year}'
+        one_quarter += f'I-{current_date.year}'
+        four_quarter += f'IV-{current_date.year - 1}'
+        
+        text += f'{four_quarter} {one_quarter} {two_quarter} {current_quarter}'
+
+    elif 10<=current_date.month<13:
+        current_quarter += f'IV-{current_date.year}'
+
+        three_quarter += f'III-{current_date.year}'
+        two_quarter += f'II-{current_date.year}'
+        one_quarter += f'I-{current_date.year}'
+        
+    text += f'{one_quarter} {two_quarter} {three_quarter} {current_quarter}'
+
+
+    builder = InlineKeyboardBuilder()
+
+    builder.row(
+        InlineKeyboardButton(text=f'{text.split(' ')[0]}', callback_data=f'select_quarter_{text.split(' ')[0]}'),
+        InlineKeyboardButton(text=f'{text.split(' ')[1]}', callback_data=f'select_quarter_{text.split(' ')[1]}'),
+        InlineKeyboardButton(text=f'{text.split(' ')[2]}', callback_data=f'select_quarter_{text.split(' ')[2]}'),
+        InlineKeyboardButton(text=f'{text.split(' ')[3]}', callback_data=f'select_quarter_{text.split(' ')[3]}')
+    )
+
+    builder.row(
+        InlineKeyboardButton(text='Отмена', callback_data='cancel_select'),
+    )
+
+    return builder.as_markup()
+
+
+def get_year_select_keyboard():
+    current_date = dt.now()
+
+    current_year = current_date.year
+
+    prev_year = current_year - 1
+    last_year = prev_year - 1
+
+    builder = InlineKeyboardBuilder()
+
+    builder.row(
+        InlineKeyboardButton(text=f'{last_year}', callback_data='select_year_last'),
+        InlineKeyboardButton(text=f'{prev_year}', callback_data='select_year_prev'),
+        InlineKeyboardButton(text=f'{current_year}', callback_data='select_year_current')
+    )
+
+    builder.row(
+        InlineKeyboardButton(text='Отмена', callback_data='cancel_select'),
+    )
+
+    return builder.as_markup()
+
+
+kb_cancel_select = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Отмена', callback_data='cancel_select')]
+])
+
+kb_formatter_report = InlineKeyboardMarkup(inline_keyboard=[
+    [
+    InlineKeyboardButton(text='Excel', callback_data='excel'), 
+    InlineKeyboardButton(text='Сокращенный отчет', callback_data='short_report')
+    ]
+])
+
+kb_edit_price_list = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text='Удалить 🗑️', callback_data='remove_price'), 
+        InlineKeyboardButton(text='Изменить ✏️', callback_data='change_price'),
+        InlineKeyboardButton(text='Отмена ❌', callback_data='cancel_edit')
+    ]
+])
+
+kb_menu_statistics = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text='Месяц 📅', callback_data='statistic_month'), 
+        InlineKeyboardButton(text='Квартал 📊', callback_data='statistic_quarter'),
+        InlineKeyboardButton(text='Год 📈', callback_data='statistic_year')
+    ],
+    [
+        InlineKeyboardButton(text='Ввести свой период', callback_data='custom_period')
+    ]
+    
+])
+
+confirmation_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='✅ Да хочу', callback_data='confirm_purchase')],
+    [InlineKeyboardButton(text="❌ Нет, не хочу", callback_data="cancel_purchase")]
+])
+
+extend_membership = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Продлить абонемент', callback_data='extend_membership')]
+])
+
+notification_btn = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Уведомления об оплате', callback_data='setting_notification_payment')],
+    [InlineKeyboardButton(text='Уведомления о новостях', callback_data='setting_notofication_news')]
+])
+
+change_registration = InlineKeyboardMarkup(inline_keyboard=[
+    [
+    InlineKeyboardButton(text='Изменить ФИО', callback_data='change_fio'),
+    InlineKeyboardButton(text='Изменить дату рождения', callback_data='change_date_of_birth')
+    ]
+])
