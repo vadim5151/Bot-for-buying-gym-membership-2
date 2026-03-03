@@ -2,11 +2,8 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 
-class ChangeName(StatesGroup):
+class ChangeProfile(StatesGroup):
     name = State()
-
-
-class ChangeBirthday(StatesGroup):
     birthday = State()
 
 

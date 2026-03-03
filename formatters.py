@@ -10,6 +10,7 @@ def format_price_list(price_data):
     
     return price_list
 
+
 def format_subscription(all_purchases):
 
     header = '| Период |  Цена  | Кол-во шт |'

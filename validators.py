@@ -7,6 +7,7 @@ from app.messages import User
 MIN_AGE = 5      
 MAX_AGE = 120    
 
+
 def validate_full_name(full_name):
     """
     Проверяет, что строка содержит три слова, каждое с заглавной буквы.

@@ -1,22 +1,14 @@
-import re
 from datetime import datetime
-import asyncio
 
-
-from dateutil.relativedelta import relativedelta 
 from aiogram import Router, F
-from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command
-from aiogram.fsm.state import StatesGroup,State
 from aiogram.fsm.context import FSMContext
 
 from init import bot
 import app.keyboards as kb
-from formatters import format_price_list, format_cheque
 from database.repository import UserRepository, PriceRepository, NotificationRepository, PurchasesRepository, TempMessageRepository
 from app.messages import User
-from app.handlers.user_handlers.user_states import ChangeBirthday, ChangeName
+from app.handlers.user_handlers.user_states import ChangeProfile
 from validators import validate_full_name, validate_birthdate
 
 
@@ -68,14 +60,14 @@ async def show_profile(message: Message):
 
 @router.callback_query(F.data == 'change_fio')
 async def change_fio(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(ChangeName.name)
+    await state.set_state(ChangeProfile.name)
 
     temp_message = await callback.message.edit_text(User.ASK_FULLNAME)
 
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
 
 
-@router.message(ChangeName.name)
+@router.message(ChangeProfile.name)
 async def change_fio(message: Message, state: FSMContext):
     await message.delete()
 
@@ -98,14 +90,14 @@ async def change_fio(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == 'change_date_of_birth')
 async def change_date_of_birth(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(ChangeBirthday.birthday)
+    await state.set_state(ChangeProfile.birthday)
 
     temp_message = await callback.message.edit_text(User.ASK_BIRTHDATE)
 
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
 
 
-@router.message(ChangeBirthday.birthday)
+@router.message(ChangeProfile.birthday)
 async def change_date_of_birth(message: Message, state: FSMContext):
     await message.delete()
 
