@@ -30,14 +30,16 @@ async def setting_notifications_payments(message: Message):
 
 @router.callback_query(F.data.startswith('toggle_'))
 async def process_toggle(callback: CallbackQuery):
-    days = callback.data[7:]
+    days = int(callback.data[7:])
     user_periods = await user_repo.find_one_by_id(callback.from_user.id)
     user_periods = user_periods['notification_days_period']
 
-    if int(days) in user_periods:
-        await user_repo.update_notification(callback.from_user.id, 'pull', int(days))
+    if days in user_periods:
+        action = 'pull'
     else:
-        await user_repo.update_notification(callback.from_user.id, 'push', int(days))
+        action = 'push'
+
+    await user_repo.update_notification(callback.from_user.id, action, days)
 
     available_notificatons = await notification_repo.find_one()
     available_notificatons = available_notificatons['available_periods']

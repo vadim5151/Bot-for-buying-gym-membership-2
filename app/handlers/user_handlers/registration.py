@@ -1,4 +1,5 @@
 from datetime import datetime
+import traceback
 
 from aiogram import Router
 from aiogram.types import Message
@@ -40,7 +41,8 @@ async def get_username(message: Message, state: FSMContext):
     except InvalidFullNameWordCounts:
         message_text = User.INVALID_FULLNAME_WORD_COUNTS
     
-    except:
+    except Exception as e:
+        print(f'Error {e}')
         message_text = User.UNEXPECTED_ERROR
 
 
@@ -56,7 +58,7 @@ async def get_date_of_birth(message: Message, state: FSMContext):
 
     try:
         validate_birthdate(date_str)
-        await state.update_data(birthday=datetime.strptime(date_str, "%d.%m.%Y"))
+        await state.update_data(birthday=date_str)
         await register(message, state)
 
         return
@@ -66,7 +68,8 @@ async def get_date_of_birth(message: Message, state: FSMContext):
     except AgeLimit:
         message_text = User.AGE_TOO_HIGH
     
-    except:
+    except Exception as e:
+        print(f'Error {e}')
         message_text = User.UNEXPECTED_ERROR
 
     await message.answer(message_text)
@@ -82,8 +85,8 @@ async def register(message: Message, state: FSMContext):
     user = {
             'tg_id': tg_id, 
             'full_name': full_name,           
-            'date_of_birth': birthdate ,
-            'is_admin': False ,
+            'date_of_birth': datetime.strptime(birthdate, '%d.%m.%Y'),
+            'is_admin': False,
             'notification_days_period': [], 
         }
 

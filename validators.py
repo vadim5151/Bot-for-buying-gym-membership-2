@@ -29,8 +29,8 @@ def validate_birthdate(date_str):
 
     today = datetime.now()
 
-    age = relativedelta(today, birth_date)
-
+    age = relativedelta(today, birth_date).years
+ 
     if age < 0:
         raise FutureBirthDate
 
@@ -38,3 +38,8 @@ def validate_birthdate(date_str):
         raise AgeLimit
     
 
+def validate_month(message_text):
+    if message_text and len(message_text.split(' '))==2 and (isinstance(message_text.split(' ')[0], str) and message_text.split(' ')[-1].isdigit()):
+        return True
+    else:
+        return False

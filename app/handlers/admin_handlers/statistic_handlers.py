@@ -12,6 +12,9 @@ import app.keyboards as kb
 from services.excel_reports import generate_excel_report
 from database.repository import PurchasesRepository, TempMessageRepository
 from app.messages import AdminStats, Common
+from app.handlers.admin_handlers.admin_states import Data
+from utils import month_names, month_numbers
+from validators import validate_month
 
 
 
@@ -19,17 +22,6 @@ router = Router()
 
 purchases_repo = PurchasesRepository()
 temp_message_repo = TempMessageRepository()
-
-
-class Data(StatesGroup):
-    quarter = State()
-    from_date = State()
-    to_date = State()
-    date=State()
-    month_name=State()
-    year=State()
-    custom_period = State()
-
 
 
 
@@ -42,7 +34,7 @@ async def menu_statistics(message: Message):
 
 @router.callback_query(F.data == 'statistic_month')
 async def statistic_month_func(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Data.date)
+    await state.set_state(Data.month_and_year)
 
     temp_message = await callback.message.edit_text(AdminStats.ASK_MONTH,
                                     reply_markup=kb.get_month_selector_keyboard())
@@ -52,78 +44,56 @@ async def statistic_month_func(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.message(Data.date)
-async def handle_month_callback(message: Message, state: FSMContext):
-    month_names = {
-        1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель", 
-        5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
-        9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"
-    }
-     
-    if message.text and len(message.text.split(' '))==2 and (isinstance(message.text.split(' ')[0], str) and message.text.split(' ')[-1].isdigit()):
-        date = None
-        for count, month_name in month_names.items():
-            if message.text.split(' ')[0].capitalize() == month_name:         
-                date = dt(int(message.text.split(' ')[-1]), count, 1)
-
-        if date is not None:
-            await state.update_data(date=date, month_name=message.text.split(' ')[0], year=message.text.split(' ')[-1])
-        else:
-            temp_message = await message.answer(Common.ERROR_OCCURRED)
-            
-            await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
-
-            return
-        
-        await message.delete()
-
-        await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
-    
-        await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-    
-    else:
+@router.message(Data.month_and_year)
+async def handle_month_text(message: Message, state: FSMContext):
+    if not validate_month(message.text):
         await message.delete()
         temp_message = await message.answer(AdminStats.ASK_MONTH_YEAR)
         await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
 
+        return
+    
+    date = dt(int(message.text.split(' ')[-1]), month_numbers.get(message.text.split(' ')[0].capitalize()), 1)            
+    
+
+    if date:
+        await state.update_data(month=date, month_name=message.text.split(' ')[0], year=message.text.split(' ')[-1])
+
+    else:
+        temp_message = await message.answer(Common.ERROR_OCCURRED)
+        
+        await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
+
+        return
+
+    await message.delete()
+
+    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+
+    await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
+
 
 
 @router.callback_query(F.data.startswith('select_month_'))
-async def handle_month_callback(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Data.date)
+async def handle_month_button(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(Data.month_and_year)
 
     month = callback.data.split('_')[-1]
 
     current_date = dt.now()
-
-    current_year = current_date.year
-    current_month = current_date.month
-
-    month_names = {
-        1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель", 
-        5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
-        9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"
-    }
-
-    current_month_name = month_names.get(current_month, '')
-
     prev_month_date = current_date - timedelta(days=current_date.day)
     last_month_date = prev_month_date - timedelta(days=prev_month_date.day)
 
-    prev_month_name = month_names.get(prev_month_date.month, '')
-    last_month_name = month_names.get(last_month_date.month, '')
-
-    if month=='current':   
-        await state.update_data(date=current_date,month_name=current_month_name, year=current_year)
+    if month=='current':
+        await state.update_data(month=current_date, month_name=month_names.get(current_date.month), year=current_date.year)
         await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
         
-
     elif month=='prev':
-        await state.update_data(date=prev_month_date,month_name=prev_month_name, year=prev_month_date.year)
+        await state.update_data(month=prev_month_date,month_name=month_names.get(prev_month_date.month), year=prev_month_date.year)
         await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
     elif month=='last':
-        await state.update_data(date=last_month_date,month_name=last_month_name, year=last_month_date.year)
+        await state.update_data(month=last_month_date,month_name=month_names.get(last_month_date.month), year=last_month_date.year)
         await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
         
     await callback.answer()
@@ -281,7 +251,7 @@ async def handle_year_callback(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.startswith('select_year_'))
 async def handle_year_callback(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Data.quarter)
+    await state.set_state(Data.year)
 
     current_date = dt.now()
 
@@ -332,7 +302,7 @@ async def generation_report(callback: CallbackQuery, state: FSMContext):
 
         await state.clear()
 
-    elif 'date' in data:
+    elif 'month' in data:
         month = dt.strftime(data['date'], '%m')
         date = f"\\.{month}\\.{data['year']}$"
 
@@ -344,7 +314,6 @@ async def generation_report(callback: CallbackQuery, state: FSMContext):
         all_purchases = await purchases_repo.find_by_date({"$regex": date})
         
         await state.clear()
-
 
     elif 'quarter' in data:
         data = data['quarter']
@@ -400,7 +369,6 @@ async def generation_report(callback: CallbackQuery, state: FSMContext):
                 for purchase in purchases:
                     all_purchases.append(purchase)
         await state.clear()
-
 
     elif 'year' in data:
         year = data['year']
