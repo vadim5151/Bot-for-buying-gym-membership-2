@@ -10,9 +10,9 @@ def generate_excel_report(all_purchases, file_path):
 
     for purshases in all_purchases:
         total_buy_subscription += 1
-        total_spent += purshases['subscription_price']
+        total_spent += purshases['amount']
 
-    sub_name_price = [f"{i['subscription_name']} {i['subscription_price']}" for i in all_purchases]
+    sub_name_price = [f"{i['month']} {i['amount']}" for i in all_purchases]
     mapped_sub = set(sub_name_price)   
 
     for sub_name in mapped_sub:

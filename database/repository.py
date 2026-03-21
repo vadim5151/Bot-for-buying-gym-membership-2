@@ -43,8 +43,8 @@ class PurchasesRepository:
         return await collection_purchases.find_one(filter={'tg_id': tg_id})
 
 
-    async def find_by_date(self, date):
-        return await collection_purchases.find(filter={'purchase_date': date}).to_list()
+    async def find_by_date(self, from_date, to_date):
+        return await collection_purchases.find(filter={'purchase_date': {'$gte':from_date, '$lte':to_date}}).to_list()
     
 
     async def insert_purchase(self, tg_id, month, amount, date, expiration_date):

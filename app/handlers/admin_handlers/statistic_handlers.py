@@ -1,9 +1,9 @@
 import os
 from datetime import datetime as dt, timedelta
 
+from dateutil.relativedelta import relativedelta 
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, FSInputFile
-from aiogram.fsm.state import StatesGroup,State
 from aiogram.fsm.context import FSMContext
 
 from init import bot
@@ -13,16 +13,16 @@ from services.excel_reports import generate_excel_report
 from database.repository import PurchasesRepository, TempMessageRepository
 from app.messages import AdminStats, Common
 from app.handlers.admin_handlers.admin_states import Data
-from utils import month_names, month_numbers
+from utils import month_numbers, quarter_names_to_num, quarter_to_date_range
 from validators import validate_month
 
+from pprint import pprint
 
 
 router = Router()
 
 purchases_repo = PurchasesRepository()
 temp_message_repo = TempMessageRepository()
-
 
 
 @router.message(F.text == 'Статистика 📊')
@@ -33,14 +33,13 @@ async def menu_statistics(message: Message):
 
 
 @router.callback_query(F.data == 'statistic_month')
-async def statistic_month_func(callback: CallbackQuery, state: FSMContext):
+async def statistic_month(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Data.month_and_year)
 
     temp_message = await callback.message.edit_text(AdminStats.ASK_MONTH,
                                     reply_markup=kb.get_month_selector_keyboard())
 
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
-
     await callback.answer()
 
 
@@ -53,65 +52,61 @@ async def handle_month_text(message: Message, state: FSMContext):
 
         return
     
-    date = dt(int(message.text.split(' ')[-1]), month_numbers.get(message.text.split(' ')[0].capitalize()), 1)            
-    
+    from_date = dt(int(message.text.split(' ')[-1]), month_numbers.get(message.text.split(' ')[0].capitalize()), 1)
+    to_date = from_date+relativedelta(months=1)-relativedelta(days=1)
 
-    if date:
-        await state.update_data(month=date, month_name=message.text.split(' ')[0], year=message.text.split(' ')[-1])
-
-    else:
-        temp_message = await message.answer(Common.ERROR_OCCURRED)
-        
-        await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
-
-        return
+    await state.update_data(from_date=from_date, to_date=to_date)
 
     await message.delete()
-
     await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
 
     await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
 
-
 @router.callback_query(F.data.startswith('select_month_'))
-async def handle_month_button(callback: CallbackQuery, state: FSMContext):
+async def handle_month_btn(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Data.month_and_year)
 
     month = callback.data.split('_')[-1]
-
     current_date = dt.now()
-    prev_month_date = current_date - timedelta(days=current_date.day)
-    last_month_date = prev_month_date - timedelta(days=prev_month_date.day)
+    prev_month_last_day_date = current_date - timedelta(days=current_date.day)
+    # последний_день_позапрошлого_месяца
+    two_months_ago_last_day_date = prev_month_last_day_date - timedelta(days=prev_month_last_day_date.day)
 
     if month=='current':
-        await state.update_data(month=current_date, month_name=month_names.get(current_date.month), year=current_date.year)
-        await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-        
+        await state.update_data(
+            from_date=current_date-timedelta(days=current_date.day+1),
+            to_date=current_date
+        )
+        await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)   
     elif month=='prev':
-        await state.update_data(month=prev_month_date,month_name=month_names.get(prev_month_date.month), year=prev_month_date.year)
+        await state.update_data(
+            from_date=prev_month_last_day_date-timedelta(days=prev_month_last_day_date.day-1),
+            to_date=prev_month_last_day_date
+        )
         await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-
     elif month=='last':
-        await state.update_data(month=last_month_date,month_name=month_names.get(last_month_date.month), year=last_month_date.year)
+        await state.update_data(
+            from_date=two_months_ago_last_day_date-timedelta(days=two_months_ago_last_day_date.day-1),
+            to_date=two_months_ago_last_day_date
+        )
         await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
         
     await callback.answer()
 
 
 @router.callback_query(F.data == 'custom_period')
-async def create_custom_period(callback: CallbackQuery, state: FSMContext):
+async def statistic_custom_period(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Data.custom_period)
 
     temp_message = await callback.message.edit_text(AdminStats.ASK_CUSTOM_PERIOD, reply_markup=kb.kb_cancel_select)
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
 
-
     await callback.answer('')
 
 
 @router.message(Data.custom_period)
-async def create_custom_period(message: Message, state: FSMContext):
+async def handle_custom_period_text(message: Message, state: FSMContext):
     try:
         start_period = dt.strptime(message.text.split(' - ')[0], '%d.%m.%Y')
     except:
@@ -133,35 +128,24 @@ async def create_custom_period(message: Message, state: FSMContext):
         return
     
     if start_period > end_period:
-        upd_start_period = end_period
-        upd_end_period = start_period
-
-        await state.update_data(from_date=upd_start_period, to_date=upd_end_period)
-        temp_message = await message.answer(AdminStats.CORRECT_DATE.format(from_date=upd_start_period.strftime("%d.%m.%Y"), to_date=upd_end_period.strftime("%d.%m.%Y")))
-
+        temp_message = await message.answer(AdminStats.CORRECT_DATE)
         await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
 
+        await temp_message_repo.add_temp_message_id(message.from_user.id, message.message_id)
 
-        await message.delete()
+        return 
+    
+    await state.update_data(from_date=start_period, to_date=end_period)
 
-        await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await message.delete()
 
+    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    
+    await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
-        await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-
-    else:     
-        await state.update_data(from_date=start_period, to_date=end_period)
-
-        await message.delete()
-
-        await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
-        
-
-        await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-
-
+   
 @router.callback_query(F.data == 'statistic_quarter')
-async def handle_quarter_callback(callback : CallbackQuery, state: FSMContext):
+async def statistic_quarter(callback : CallbackQuery, state: FSMContext):
     await state.set_state(Data.quarter)
     temp_message = await callback.message.edit_text(AdminStats.ASK_QUARTER, reply_markup=kb.get_quarter_select_keybord())
     
@@ -171,53 +155,18 @@ async def handle_quarter_callback(callback : CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-# @router.message(Data.quarter)
-# async def handle_quarter_callback(message: Message, state: FSMContext):
-#     if message.text and len(message.text.split(' '))==2 and (isinstance(message.text.split(' ')[0]) and isinstance(message.text.split(' ')[1])):
-#         await message.delete()
-
-#         await state.update_data(quarter=message.text)
-
-        #  await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
-#        
-
-#         await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-
-#     else:   
-#         await message.delete()
-
-#         temp_message = await message.answer(Common.ERROR_OCCURRED)
-            
-#         await add_temp_message_id(message.from_user.id, temp_message.message_id)
-
-#         return
-
-
 @router.callback_query(F.data.startswith('select_quarter_'))
-async def handle_quarter_callback(callback : CallbackQuery, state: FSMContext):
+async def handle_quarter_btn(callback : CallbackQuery, state: FSMContext):
     await state.set_state(Data.quarter)
 
-    quarter = callback.data.split('_')[-1]
+    from_date, to_date = quarter_to_date_range(callback.data.split('_')[-1])
+    await state.update_data(from_date=from_date, to_date=to_date)
 
-    if quarter.split('-')[0] == 'I':
-        await state.update_data(quarter=quarter.replace('I', '1'). replace('-', ' '))
-        await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-
-    elif quarter.split('-')[0] == 'II':
-        await state.update_data(quarter=quarter.replace('II', '2'). replace('-', ' '))
-        await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-
-    elif quarter.split('-')[0] == 'III':
-        await state.update_data(quarter=quarter.replace('III', '3'). replace('-', ' '))
-        await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-
-    elif quarter.split('-')[0] == 'IV':
-        await state.update_data(quarter=quarter.replace('IV', '4'). replace('-', ' '))
-        await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
+    await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
    
 @router.callback_query(F.data == 'statistic_year')
-async def handle_year_calback(callback: CallbackQuery, state: FSMContext):
+async def statistic_year(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Data.year)
     temp_message = await callback.message.edit_text(AdminStats.ASK_YEAR, reply_markup=kb.get_year_select_keyboard())
 
@@ -227,177 +176,71 @@ async def handle_year_calback(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(Data.year)
-async def handle_year_callback(message: Message, state: FSMContext):
-    if message.text and len(message.text) == 4:
+async def handle_year_text(message: Message, state: FSMContext):
+    if len(message.text) != 4:
         await message.delete()
+        temp_message = await message.answer(Common.ERROR_OCCURRED)   
 
-        await state.update_data(year=message.text)
-
-        await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
-
-
-        await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-
-    else:   
-        await message.delete()
-
-        temp_message = await message.answer(Common.ERROR_OCCURRED)
-            
         await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
-
-
         return
+    
+    await message.delete()
+
+    await state.update_data(from_date=dt(int(message.text), 1, 1), to_date=dt(int(message.text), 12, 31))
+
+    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
 
 @router.callback_query(F.data.startswith('select_year_'))
-async def handle_year_callback(callback: CallbackQuery, state: FSMContext):
+async def handle_year_btn(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Data.year)
 
     current_date = dt.now()
-
     current_year = current_date.year
-
     name_year = callback.data.split('_')[-1]
 
     if name_year == 'last':
-        await state.update_data(year=current_year-2)
-        await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
+        year = current_year-2
     elif name_year == 'prev':
-        await state.update_data(year=current_year-1)
-        await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
+        year = current_year-1
     elif name_year == 'current':
-            await state.update_data(year=current_year)
-            await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
-    else:
-        await callback.message.edit_text(Common.ERROR_OCCURRED)
-        
+        year=current_year
+    
+    await state.update_data(from_date=dt(year, 1, 1), to_date=dt(year, 12, 31))
+    await callback.message.edit_text(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
+
+
+@router.callback_query(F.data == 'cancel_select')
+async def cancel_select(callback: CallbackQuery):
+    await callback.message.edit_text('📈 Выберите интересуемый период:', reply_markup=kb.kb_menu_statistics)
+
+    await temp_message_repo.clear_temp_message_ids(callback.from_user.id, callback.message.chat.id, bot)
 
 
 @router.callback_query(F.data=='short_report')
 async def generation_report(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
+    
+    await callback.message.edit_text(AdminStats.REPORT_GENERATING_SHORT_CUSTOM, parse_mode='Markdown')
 
-    if 'from_date' in data:
-        from_date = data['from_date'].strftime('%d.%m.%Y')
-        to_date = data['to_date'].strftime('%d.%m.%Y')
-        
-        await callback.message.edit_text(AdminStats.REPORT_GENERATING_SHORT_CUSTOM.format(from_date=from_date, to_date=to_date), parse_mode='Markdown')
-        
-        text = f'*Отчет от {from_date} до  {to_date}*'
-
-        all_purchases = []
-        
-        purchases = await purchases_repo.find_by_date(from_date)
-        if purchases:
-            for purchase in purchases:
-                all_purchases.append(purchase)
-
-        for i in range(1, (data['to_date']-data['from_date']).days+1):
-            date = data['from_date'] + timedelta(days=i)
-            purchases = await purchases_repo.find_by_date(date.strftime('%d.%m.%Y'))
-
-            if purchases:
-                for purchase in purchases:
-                    all_purchases.append(purchase)
-
-        await state.clear()
-
-    elif 'month' in data:
-        month = dt.strftime(data['date'], '%m')
-        date = f"\\.{month}\\.{data['year']}$"
-
-        text = f'*Отчет за {month} {data['year']}*'
-
-        await callback.message.edit_text(AdminStats.REPORT_GENERATING_SHORT_MONTH.format(month=month, year=data['year']), parse_mode='Markdown')
-        
-        
-        all_purchases = await purchases_repo.find_by_date({"$regex": date})
-        
-        await state.clear()
-
-    elif 'quarter' in data:
-        data = data['quarter']
-        quarter = data.split(' ')[0]
-
-        from_date_str = ''
-        to_date_str = ''
-
-        if data.split(' ')[0] == '1':
-            quarter = quarter.replace('1', 'I')
-
-            from_date_str += f'01.01.{data.split(' ')[1]}'
-            to_date_str += f'31.03.{data.split(' ')[1]}'
-
-        elif data.split(' ')[0] == '2':
-            quarter = quarter.replace('2', 'II')
-
-            from_date_str += f'01.04.{data.split(' ')[1]}'
-            to_date_str += f'30.06.{data.split(' ')[1]}'
-
-        elif data.split(' ')[0] == '3':
-            quarter = quarter.replace('3', 'III')
-
-            from_date_str += f'01.07.{data.split(' ')[1]}'
-            to_date_str += f'30.09.{data.split(' ')[1]}'
-
-        elif data.split(' ')[0] == '4':
-            quarter = quarter.replace('4', 'IV')
-
-            from_date_str += f'01.10.{data.split(' ')[1]}'
-            to_date_str += f'31.12.{data.split(' ')[1]}'
-
-        from_date_quarter = dt.strptime(from_date_str, '%d.%m.%Y')
-        to_date_quarter = dt.strptime(to_date_str, '%d.%m.%Y')
-
-        await callback.message.edit_text(AdminStats.REPORT_GENERATING_SHORT_QUARTER.format(quarter=quarter, count=data.split(' ')[1]), parse_mode='Markdown')
-        
-        text = f'*Отчет за {quarter}-Квартал {data.split(' ')[1]}*'
-
-        all_purchases = []
-
-        purchases = await purchases_repo.find_by_date(from_date_quarter)
-
-        if purchases:
-            for purchase in purchases:
-                all_purchases.append(purchase)
-
-        for i in range(1, (to_date_quarter-from_date_quarter).days+1):
-            date = from_date_quarter + timedelta(days=i)
-
-            purchases = await purchases_repo.find_by_date(date.strftime('%d.%m.%Y'))
-            if purchases:
-                for purchase in purchases:
-                    all_purchases.append(purchase)
-        await state.clear()
-
-    elif 'year' in data:
-        year = data['year']
-        date = f"\\.{year}"
-
-        await callback.message.edit_text(AdminStats.REPORT_GENERATING_SHORT_YEAR.format(year=year), parse_mode='Markdown')
-        
-        text = f'*Отчет за {year}*'
-
-        all_purchases = await purchases_repo.find_by_date({'$regex': date})
-
-        await state.clear()
-
+    purchases = await purchases_repo.find_by_date(data['from_date'], data['to_date'])
 
     total_spent = 0
     total_buy_subscription = 0
     all_subscription = {}
 
-    for purshases in all_purchases:
+    for purshase in purchases:
         total_buy_subscription += 1
-        total_spent += purshases['subscription_price']
+        total_spent += purshase['amount']
 
-        if purshases['subscription_name'] in all_subscription and purshases['subscription_price'] in all_subscription:
-            all_subscription[purshases['subscription_name']] += 1
+        if purshase['month'] in all_subscription and purshase['amount'] in all_subscription:
+            all_subscription[purshase['month']] += 1
         else:
-            all_subscription.update({purshases['subscription_name']:1, purshases['subscription_price']:1})
+            all_subscription.update({purshase['month']:1, purshase['amount']:1})
 
-    text += f'''
-{format_subscription(all_purchases)}
+    text = f'''
+{format_subscription(purchases)}
 
 Всего продано абонементов: *{total_buy_subscription}*
 На сумму: *{total_spent:_}₽*
@@ -407,122 +250,18 @@ async def generation_report(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(text, parse_mode='Markdown')
 
 
-@router.callback_query(F.data == 'cancel_select')
-async def cancel_select(callback: CallbackQuery):
-    await callback.message.edit_text('📈 Выберите интересуемый период:', reply_markup=kb.kb_menu_statistics)
-
-
 @router.callback_query(F.data == 'excel')
 async def create_excel_report(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
-    if 'from_date' in data:
-        from_date = data['from_date'].strftime('%d.%m.%Y')
-        to_date = data['to_date'].strftime('%d.%m.%Y')
-        
-        await callback.message.edit_text(AdminStats.REPORT_GENERATING_FULL_CUSTOM.format(from_date=from_date, to_date=to_date), parse_mode='Markdown')
+    await callback.message.edit_text(AdminStats.REPORT_GENERATING_FULL_CUSTOM, parse_mode='Markdown')
 
-        all_purchases = []
+    purchases = await purchases_repo.find_by_date(data['from_date'], data['to_date'])
 
-        purchases = await purchases_repo.find_by_date(from_date)
-
-        if purchases:
-            for purchase in purchases:
-                all_purchases.append(purchase)
-
-        for i in range(1, (data['to_date']-data['from_date']).days+1):
-            date = data['from_date'] + timedelta(days=i)
-
-    
-            purchases = await purchases_repo.find_by_date(date.strftime('%d.%m.%Y'))
-            if purchases:
-                for purchase in purchases:
-                    all_purchases.append(purchase)
-
-        await state.clear()
-
-    elif 'date' in data:
-        month = dt.strftime(data['date'], '%m')
-        date = f"\\.{month}\\.{data['year']}$"
-
-        text = f'*Отчет за {month} {data['year']}*'
-
-        await callback.message.edit_text(AdminStats.REPORT_GENERATING_FULL_MONTH.format(month=month, year=data['year']), parse_mode='Markdown')
-        all_purchases = await purchases_repo.find_by_date({"$regex": date})
-        
-        await state.clear()
-
-    elif 'quarter' in data:
-        data = data['quarter']
-        quarter = data.split(' ')[0]
-
-        from_date_str = ''
-        to_date_str = ''
-
-        if data.split(' ')[0] == '1':
-            quarter = quarter.replace('1', 'I')
-
-            from_date_str += f'01.01.{data.split(' ')[1]}'
-            to_date_str += f'31.03.{data.split(' ')[1]}'
-
-        elif data.split(' ')[0] == '2':
-            quarter = quarter.replace('2', 'II')
-
-            from_date_str += f'01.04.{data.split(' ')[1]}'
-            to_date_str += f'30.06.{data.split(' ')[1]}'
-
-        elif data.split(' ')[0] == '3':
-            quarter = quarter.replace('3', 'III')
-
-            from_date_str += f'01.07.{data.split(' ')[1]}'
-            to_date_str += f'30.09.{data.split(' ')[1]}'
-
-        elif data.split(' ')[0] == '4':
-            quarter = quarter.replace('4', 'IV')
-
-            from_date_str += f'01.10.{data.split(' ')[1]}'
-            to_date_str += f'31.12.{data.split(' ')[1]}'
-
-        from_date_quarter = dt.strptime(from_date_str, '%d.%m.%Y')
-        to_date_quarter = dt.strptime(to_date_str, '%d.%m.%Y')
-
-        await callback.message.edit_text(AdminStats.REPORT_GENERATING_FULL_QUARTER.format(quarter=quarter, count=data.split(' ')[1]), parse_mode='Markdown')
-        
-        text = f'*Отчет за {quarter}-Квартал {data.split(' ')[1]}*'
-
-        all_purchases = []
-        purchases = await purchases_repo.find_by_date({"$regex": from_date_quarter})
-
-        if purchases:
-            for purchase in purchases:
-                all_purchases.append(purchase)
-
-        for i in range(1, (to_date_quarter-from_date_quarter).days+1):
-            date = from_date_quarter + timedelta(days=i)
-          
-            purchases =   await purchases_repo.find_by_date(date.strftime('%d.%m.%Y'))
-            if purchases:
-                for purchase in purchases:
-                    all_purchases.append(purchase)
-        await state.clear()
-
-    elif 'year' in data:
-        year = data['year']
-        date = f"\\.{year}"
-
-        temp_message = await callback.message.edit_text(AdminStats.REPORT_GENERATING_FULL_YEAR(year=year), parse_mode='Markdown')
-        
-        await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
-
-     
-        all_purchases = await purchases_repo.find_by_date({'$regex': date})
-
-        await state.clear()
-    
-    if all_purchases:
+    if purchases:
         excel_report_file_path =  f'app/temp_docs/{callback.from_user.id}.xls'
 
-        generate_excel_report(all_purchases, excel_report_file_path)
+        generate_excel_report(purchases, excel_report_file_path)
 
         await callback.message.answer_document(FSInputFile(excel_report_file_path))
 
