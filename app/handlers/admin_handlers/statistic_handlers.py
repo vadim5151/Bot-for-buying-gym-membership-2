@@ -226,28 +226,8 @@ async def generation_report(callback: CallbackQuery, state: FSMContext):
 
     purchases = await purchases_repo.find_by_date(data['from_date'], data['to_date'])
 
-    total_spent = 0
-    total_buy_subscription = 0
-    all_subscription = {}
-
-    for purshase in purchases:
-        total_buy_subscription += 1
-        total_spent += purshase['amount']
-
-        if purshase['month'] in all_subscription and purshase['amount'] in all_subscription:
-            all_subscription[purshase['month']] += 1
-        else:
-            all_subscription.update({purshase['month']:1, purshase['amount']:1})
-
-    text = f'''
-{format_subscription(purchases)}
-
-Всего продано абонементов: *{total_buy_subscription}*
-На сумму: *{total_spent:_}₽*
-    '''
-
     await state.clear()
-    await callback.message.edit_text(text, parse_mode='Markdown')
+    await callback.message.edit_text(format_subscription(purchases), parse_mode='Markdown')
 
 
 @router.callback_query(F.data == 'excel')

@@ -17,7 +17,7 @@ def format_subscription(all_purchases):
     line = f"{'-'*len(header)}\n"
     
     text = f"```\n{line + header + '\n|--------|--------|-----------|\n'}"
-    sub_name_price = [f"{i['subscription_name']} {i['subscription_price']}" for i in all_purchases]
+    sub_name_price = [f"{i['month']} {i['amount']}" for i in all_purchases]
     mapped_sub = set(sub_name_price)   
 
     all_subscription = []
@@ -41,6 +41,18 @@ def format_subscription(all_purchases):
         text += f"|{purchase['sub_name'].center(8)}|{price.center(8)}|{str(purchase['sub_count']).center(11)}|\n"
 
     text += f"{'-'*len(header)}\n```"
+
+    total_spent = 0
+    total_buy_subscription = 0
+
+    for purshase in all_purchases:
+        total_buy_subscription += 1
+        total_spent += purshase['amount']
+
+    text += f'''
+Всего продано абонементов: *{total_buy_subscription}*
+На сумму: *{total_spent:_}₽*
+    '''
     
     return text
 
