@@ -5,14 +5,8 @@ from aiogram.types import (InlineKeyboardMarkup, InlineKeyboardButton,
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
+from utils import quarter_num_to_names, month_names
 
-def create_more_btn(url_article):
-    builder = InlineKeyboardBuilder()
-
-    builder.button(text='Узнать больше', url=url_article)
-    
-    builder.adjust()
-    return builder.as_markup()
 
 
 def create_user_btn_price_list(months):
@@ -88,12 +82,6 @@ def get_month_selector_keyboard():
     current_year = current_date.year
     current_month = current_date.month
 
-    month_names = {
-        1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель", 
-        5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
-        9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"
-    }
-
     current_month_name = month_names.get(current_month, '')
 
     prev_month_date = current_date - timedelta(days=current_date.day)
@@ -119,65 +107,27 @@ def get_month_selector_keyboard():
 
 def get_quarter_select_keybord():
     current_date = dt.now()
+    current_year = current_date.year
+    current_month = current_date.month
 
-    current_quarter = ''
-    one_quarter = ''
-    two_quarter = ''
-    three_quarter = ''
-    four_quarter = ''
+    current_quarter_num = current_month//3 if current_month%3==0 else current_month//3+1
+    one_quarter_num_ago = current_quarter_num - 1 if current_quarter_num>1 else 4
+    two_quarter_num_ago = one_quarter_num_ago - 1 if one_quarter_num_ago>1 else 4
+    three_quarter_num_ago = two_quarter_num_ago - 1 if two_quarter_num_ago>1 else 4
 
-    text = ''
-
-    if 1<=current_date.month<4:
-        current_quarter += f'I-{current_date.year}'
-
-        four_quarter += f'IV-{current_date.year - 1}'
-        three_quarter += f'III-{current_date.year - 1}'
-        two_quarter += f'II-{current_date.year - 1}'
-
-        text += f'{two_quarter} {three_quarter} {four_quarter} {current_quarter}'
-
-    elif 4<=current_date.month<7:
-        current_quarter += f'II-{current_date.year}'
-
-        one_quarter += f'I-{current_date.year}'
-        four_quarter += f'IV-{current_date.year - 1}'
-        three_quarter += f'III-{current_date.year - 1}'
-
-        text += f'{three_quarter} {four_quarter} {one_quarter} {current_quarter}'
-        
-    elif 7<=current_date.month<10:
-        current_quarter += f'III {current_date.year}'
-
-        two_quarter += f'II-{current_date.year}'
-        one_quarter += f'I-{current_date.year}'
-        four_quarter += f'IV-{current_date.year - 1}'
-        
-        text += f'{four_quarter} {one_quarter} {two_quarter} {current_quarter}'
-
-    elif 10<=current_date.month<13:
-        current_quarter += f'IV-{current_date.year}'
-
-        three_quarter += f'III-{current_date.year}'
-        two_quarter += f'II-{current_date.year}'
-        one_quarter += f'I-{current_date.year}'
-        
-    text += f'{one_quarter} {two_quarter} {three_quarter} {current_quarter}'
-
+    quarters = []
+    for quarter_num in [three_quarter_num_ago, two_quarter_num_ago, one_quarter_num_ago, current_quarter_num]:
+        quarters.append(f'{quarter_num_to_names[quarter_num]}-{current_year-1 if quarter_num>current_quarter_num else current_year}')
 
     builder = InlineKeyboardBuilder()
-
-    builder.row(
-        InlineKeyboardButton(text=f'{text.split(' ')[0]}', callback_data=f'select_quarter_{text.split(' ')[0]}'),
-        InlineKeyboardButton(text=f'{text.split(' ')[1]}', callback_data=f'select_quarter_{text.split(' ')[1]}'),
-        InlineKeyboardButton(text=f'{text.split(' ')[2]}', callback_data=f'select_quarter_{text.split(' ')[2]}'),
-        InlineKeyboardButton(text=f'{text.split(' ')[3]}', callback_data=f'select_quarter_{text.split(' ')[3]}')
-    )
-
+    quarter_buttons = []
+    for quarter in quarters:
+        quarter_buttons.append(InlineKeyboardButton(text=f'{quarter}', callback_data=f'select_quarter_{quarter}'))
+    
+    builder.row(*quarter_buttons)
     builder.row(
         InlineKeyboardButton(text='Отмена', callback_data='cancel_select'),
     )
-
     return builder.as_markup()
 
 

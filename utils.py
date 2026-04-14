@@ -15,6 +15,8 @@ quarter_names_to_num = {
     'I':1, 'II':2, 'III':3, 'IV':4
 }
 
+quarter_num_to_names = {value: key for key, value in quarter_names_to_num.items()}
+
 def quarter_to_date_range(quarter_str: str) -> datetime:
     quarter_name, year = quarter_str.split('-')
     quarter = quarter_names_to_num.get(quarter_name)

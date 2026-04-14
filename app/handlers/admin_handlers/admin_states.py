@@ -2,7 +2,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 
-class Data(StatesGroup):
+class StatisticData(StatesGroup):
     quarter = State()
     month_and_year=State()
     year=State()

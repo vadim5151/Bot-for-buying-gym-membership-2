@@ -1,18 +1,26 @@
-def format_price_list(price_data):
-    price_list = 'Актуальный прайс лист:\n'
-    for price in sorted(price_data, key=lambda x: x['month']):
-        if price['month'] == 1:
-            price_list += f'{price['month']} месяц: {price['price']}₽\n'
-        elif 1<price['month'] and price['month']<5:
-            price_list += f'{price['month']} месяца: {price['price']}₽\n'
-        elif price['month'] >= 5:
-            price_list += f'{price['month']} месяцев: {price['price']}₽\n'
-    
-    return price_list
+def generate_price_text(price:list[dict]):
+    price_text = 'Актуальный прайс лист:\n'
+
+    for price in sorted(price, key=lambda x: x['month']):
+        price_text += generate_price_text_by_month(price['month'], price['price'])
+       
+    return price_text
 
 
-def format_subscription(all_purchases):
+def generate_price_text_by_month(month, amount):
+    price = ''
 
+    if int(month) == 1:
+        price += f'{month} месяц: {amount}₽\n'
+    elif 1<int(month) and int(month)<5:
+        price += f'{month} месяца: {amount}₽\n'
+    elif int(month) >= 5:
+        price += f'{month} месяцев: {amount}₽\n'
+
+    return price
+
+
+def generate_short_report(all_purchases:list[dict]) -> str:
     header = '| Период |  Цена  | Кол-во шт |'
     line = f"{'-'*len(header)}\n"
     
@@ -57,15 +65,6 @@ def format_subscription(all_purchases):
     return text
 
 
-def format_price(month, amount):
-    price = ''
-    if int(month) == 1:
-        price += f'{month} месяц: {amount}₽\n'
-    elif 1<int(month) and int(month)<5:
-        price += f'{month} месяца: {amount}₽\n'
-    elif int(month) >= 5:
-        price += f'{month} месяцев: {amount}₽\n'
-    return price
 
 
 def format_cheque(month, today_date, new_expiration_date, amount):

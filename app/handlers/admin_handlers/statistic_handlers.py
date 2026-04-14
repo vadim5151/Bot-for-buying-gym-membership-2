@@ -7,12 +7,12 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
 
 from init import bot
-from formatters import format_subscription
+from formatters import generate_short_report
 import app.keyboards as kb
 from services.excel_reports import generate_excel_report
 from database.repository import PurchasesRepository, TempMessageRepository
 from app.messages import AdminStats, Common
-from app.handlers.admin_handlers.admin_states import Data
+from app.handlers.admin_handlers.admin_states import StatisticData
 from utils import month_numbers, quarter_names_to_num, quarter_to_date_range
 from validators import validate_month
 
@@ -34,7 +34,7 @@ async def menu_statistics(message: Message):
 
 @router.callback_query(F.data == 'statistic_month')
 async def statistic_month(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Data.month_and_year)
+    await state.set_state(StatisticData.month_and_year)
 
     temp_message = await callback.message.edit_text(AdminStats.ASK_MONTH,
                                     reply_markup=kb.get_month_selector_keyboard())
@@ -43,7 +43,7 @@ async def statistic_month(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.message(Data.month_and_year)
+@router.message(StatisticData.month_and_year)
 async def handle_month_text(message: Message, state: FSMContext):
     if not validate_month(message.text):
         await message.delete()
@@ -65,7 +65,7 @@ async def handle_month_text(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.startswith('select_month_'))
 async def handle_month_btn(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Data.month_and_year)
+    await state.set_state(StatisticData.month_and_year)
 
     month = callback.data.split('_')[-1]
     current_date = dt.now()
@@ -97,7 +97,7 @@ async def handle_month_btn(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'custom_period')
 async def statistic_custom_period(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Data.custom_period)
+    await state.set_state(StatisticData.custom_period)
 
     temp_message = await callback.message.edit_text(AdminStats.ASK_CUSTOM_PERIOD, reply_markup=kb.kb_cancel_select)
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
@@ -105,7 +105,7 @@ async def statistic_custom_period(callback: CallbackQuery, state: FSMContext):
     await callback.answer('')
 
 
-@router.message(Data.custom_period)
+@router.message(StatisticData.custom_period)
 async def handle_custom_period_text(message: Message, state: FSMContext):
     try:
         start_period = dt.strptime(message.text.split(' - ')[0], '%d.%m.%Y')
@@ -146,7 +146,7 @@ async def handle_custom_period_text(message: Message, state: FSMContext):
    
 @router.callback_query(F.data == 'statistic_quarter')
 async def statistic_quarter(callback : CallbackQuery, state: FSMContext):
-    await state.set_state(Data.quarter)
+    await state.set_state(StatisticData.quarter)
     temp_message = await callback.message.edit_text(AdminStats.ASK_QUARTER, reply_markup=kb.get_quarter_select_keybord())
     
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
@@ -157,7 +157,7 @@ async def statistic_quarter(callback : CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data.startswith('select_quarter_'))
 async def handle_quarter_btn(callback : CallbackQuery, state: FSMContext):
-    await state.set_state(Data.quarter)
+    await state.set_state(StatisticData.quarter)
 
     from_date, to_date = quarter_to_date_range(callback.data.split('_')[-1])
     await state.update_data(from_date=from_date, to_date=to_date)
@@ -167,7 +167,7 @@ async def handle_quarter_btn(callback : CallbackQuery, state: FSMContext):
    
 @router.callback_query(F.data == 'statistic_year')
 async def statistic_year(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Data.year)
+    await state.set_state(StatisticData.year)
     temp_message = await callback.message.edit_text(AdminStats.ASK_YEAR, reply_markup=kb.get_year_select_keyboard())
 
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
@@ -175,7 +175,7 @@ async def statistic_year(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.message(Data.year)
+@router.message(StatisticData.year)
 async def handle_year_text(message: Message, state: FSMContext):
     if len(message.text) != 4:
         await message.delete()
@@ -194,7 +194,7 @@ async def handle_year_text(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.startswith('select_year_'))
 async def handle_year_btn(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Data.year)
+    await state.set_state(StatisticData.year)
 
     current_date = dt.now()
     current_year = current_date.year
@@ -219,7 +219,7 @@ async def cancel_select(callback: CallbackQuery):
 
 
 @router.callback_query(F.data=='short_report')
-async def generation_report(callback: CallbackQuery, state: FSMContext):
+async def short_report(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     
     await callback.message.edit_text(AdminStats.REPORT_GENERATING_SHORT_CUSTOM, parse_mode='Markdown')
@@ -227,11 +227,11 @@ async def generation_report(callback: CallbackQuery, state: FSMContext):
     purchases = await purchases_repo.find_by_date(data['from_date'], data['to_date'])
 
     await state.clear()
-    await callback.message.edit_text(format_subscription(purchases), parse_mode='Markdown')
+    await callback.message.edit_text(generate_short_report(purchases), parse_mode='Markdown')
 
 
 @router.callback_query(F.data == 'excel')
-async def create_excel_report(callback: CallbackQuery, state: FSMContext):
+async def excel_report(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
     await callback.message.edit_text(AdminStats.REPORT_GENERATING_FULL_CUSTOM, parse_mode='Markdown')

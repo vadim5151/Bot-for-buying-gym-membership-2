@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 
 from init import bot
 import app.keyboards as kb
-from formatters import format_price_list
+from formatters import generate_price_text
 from database.repository import PriceRepository, PurchasesRepository, TempMessageRepository
 from app.messages import User
 from app.handlers.user_handlers.user_states import BuyMembership
@@ -28,7 +28,7 @@ async def get_price(message: Message):
 
     price_data = await price_repo.get_all_prices()
 
-    price_list = format_price_list(price_data)
+    price_list = generate_price_text(price_data)
     
 
     months = [month['month'] for month in price_data]
@@ -132,7 +132,7 @@ async def check_membership(message: Message):
         await message.answer(User.NO_MEMBERSHIP)
         price_data = await price_repo.get_all_prices()
 
-        price = format_price_list(price_data)
+        price = generate_price_text(price_data)
         
         months = [month['month'] for month in price_data]
 
@@ -143,7 +143,7 @@ async def check_membership(message: Message):
 async def get_price_inline(callback: CallbackQuery):
     price_data = await price_repo.get_all_prices()
 
-    price_list = format_price_list(price_data)
+    price_list = generate_price_text(price_data)
     
     months = [month['month'] for month in price_data]
 
