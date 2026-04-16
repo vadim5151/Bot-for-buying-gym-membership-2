@@ -7,3 +7,7 @@ class StatisticData(StatesGroup):
     month_and_year=State()
     year=State()
     custom_period = State()
+
+
+class PriceEditData(StatesGroup):
+    pass

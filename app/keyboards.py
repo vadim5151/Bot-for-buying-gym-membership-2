@@ -31,7 +31,7 @@ def create_admin_price_list(months):
             builder.button(text=f'редактировать {month} месяца 📝', callback_data=f'edit_{month}_month')
         else:
             builder.button(text=f'редактировать {month} месяцев 📝', callback_data=f'edit_{month}_month')
-    builder.button(text='Добавить период 🗓️➕', callback_data='add_price')
+    builder.button(text='Добавить период 🗓️➕', callback_data='update_price')
     builder.adjust(1)
     return builder.as_markup()
 
@@ -168,7 +168,7 @@ kb_formatter_report = InlineKeyboardMarkup(inline_keyboard=[
 kb_edit_price_list = InlineKeyboardMarkup(inline_keyboard=[
     [
         InlineKeyboardButton(text='Удалить 🗑️', callback_data='remove_price'), 
-        InlineKeyboardButton(text='Изменить ✏️', callback_data='change_price'),
+        InlineKeyboardButton(text='Изменить ✏️', callback_data='update_price'),
         InlineKeyboardButton(text='Отмена ❌', callback_data='cancel_edit')
     ]
 ])

@@ -37,9 +37,9 @@ def validate_birthdate(date_str):
     if age > MAX_AGE:
         raise AgeLimit
     
+def validate_price_period(message_text):
+    return message_text and len(message_text.split()) == 2 and (message_text.split()[0].isdigit() and message_text.split()[1].isdigit())
 
 def validate_month(message_text):
-    if message_text and len(message_text.split(' '))==2 and (isinstance(message_text.split(' ')[0], str) and message_text.split(' ')[-1].isdigit()):
-        return True
-    else:
-        return False
+    return message_text and len(message_text.split(' '))==2 and message_text.split(' ')[-1].isdigit()
+      
