@@ -16,8 +16,8 @@ class PriceRepository:
         return res
 
 
-    async def update_one(self, month, amount, new_month, new_amount):
-        res = await collection_price.update_one(filter={'month': month, 'price': amount}, 
+    async def update_one(self, old_month, old_amount, new_month, new_amount):
+        res = await collection_price.update_one(filter={'month': old_month, 'price': old_amount}, 
                                 update={'$set':{'month': new_month, 'price': new_amount}})
         return res
         
@@ -106,12 +106,13 @@ class TempMessageRepository:
         return res['temp_message_ids']
     
 
-    async def clear_temp_message_ids(self, tg_id, chat_id, bot):
-        await collection_temp_message_ids.update_one(filter={'tg_id': tg_id}, update={'$set':{'temp_message_ids': []}})
-
+    async def delete_temp_messages(self, tg_id, chat_id, bot):
         temp_messages = await self.get_temp_message_ids(tg_id)
+        
+        await collection_temp_message_ids.update_one(filter={'tg_id': tg_id}, update={'$set':{'temp_message_ids': []}})
 
         for temp_message in temp_messages:
             await bot.delete_message(chat_id, temp_message)
+
 
     

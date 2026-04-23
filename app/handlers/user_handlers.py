@@ -134,7 +134,7 @@ async def get_date_of_birth(message: Message, state: FSMContext):
         await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
 
 
-    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
 
     data = await state.get_data()
     tg_id = message.from_user.id
@@ -177,7 +177,7 @@ async def change_fio(callback: CallbackQuery, state: FSMContext):
 async def change_fio(message: Message, state: FSMContext):
     await user_repo.update_fio(message.from_user.id, message.text)
 
-    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
 
 
     await message.delete()
@@ -205,7 +205,7 @@ async def change_date_of_birth(callback: CallbackQuery, state: FSMContext):
 async def change_date_of_birth(message: Message, state: FSMContext):
     await user_repo.update_date_of_birth(message.from_user.id, message.text)
     
-    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
 
 
     await message.delete()

@@ -93,7 +93,7 @@ async def register(message: Message, state: FSMContext):
     await user_repo.insert_one(user)
     await state.clear()
 
-    await temp_message_repo.clear_temp_message_ids(tg_id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(tg_id, message.chat.id, bot)
     
     await message.answer(f"✅ Регистрация завершена!\n\n"
                 f"📋 Ваши данные:\n"

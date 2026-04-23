@@ -79,7 +79,7 @@ async def change_fio(message: Message, state: FSMContext):
 
         return
     
-    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
 
     await user_repo.update_fio(message.from_user.id, full_name)
 
@@ -109,7 +109,7 @@ async def change_date_of_birth(message: Message, state: FSMContext):
 
         return
 
-    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
 
     await user_repo.update_fio(message.from_user.id, datetime.strftime(result,'%d.%m.%Y'))
 

@@ -58,7 +58,7 @@ async def handle_month_text(message: Message, state: FSMContext):
     await state.update_data(from_date=from_date, to_date=to_date)
 
     await message.delete()
-    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
 
     await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
@@ -139,7 +139,7 @@ async def handle_custom_period_text(message: Message, state: FSMContext):
 
     await message.delete()
 
-    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
     
     await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
@@ -188,7 +188,7 @@ async def handle_year_text(message: Message, state: FSMContext):
 
     await state.update_data(from_date=dt(int(message.text), 1, 1), to_date=dt(int(message.text), 12, 31))
 
-    await temp_message_repo.clear_temp_message_ids(message.from_user.id, message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
     await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
 
@@ -215,7 +215,7 @@ async def handle_year_btn(callback: CallbackQuery, state: FSMContext):
 async def cancel_select(callback: CallbackQuery):
     await callback.message.edit_text('📈 Выберите интересуемый период:', reply_markup=kb.kb_menu_statistics)
 
-    await temp_message_repo.clear_temp_message_ids(callback.from_user.id, callback.message.chat.id, bot)
+    await temp_message_repo.delete_temp_messages(callback.from_user.id, callback.message.chat.id, bot)
 
 
 @router.callback_query(F.data=='short_report')
