@@ -10,6 +10,7 @@ from database.repository import UserRepository, PriceRepository, NotificationRep
 from app.messages import User
 from app.handlers.user_handlers.user_states import ChangeProfile
 from validators import validate_full_name, validate_birthdate
+from exceptions import InvalidFullName, InvalidFullNameWordCounts, FutureBirthDate, AgeLimit, InvalidDateFormat
 
 
 
@@ -72,49 +73,52 @@ async def change_fio(message: Message, state: FSMContext):
     await message.delete()
 
     full_name = message.text
-    is_valid, error = validate_full_name(full_name)
-    if not is_valid:
-        temp_message = await message.answer(error)
+    try:
+        validate_full_name(full_name)
+    except InvalidFullName:
+        temp_message = await message.answer('Имя должно начинаться с заглавных букв и состоять только из букв')
         await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
-
         return
-    
+    except InvalidFullNameWordCounts:
+        temp_message = await message.answer('Длина имени не соответствует')
+        await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
+        return
     await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
-
     await user_repo.update_fio(message.from_user.id, full_name)
 
     await message.answer('✅ Имя измененно')
-
     await state.clear()
 
 
 @router.callback_query(F.data == 'change_date_of_birth')
 async def change_date_of_birth(callback: CallbackQuery, state: FSMContext):
     await state.set_state(ChangeProfile.birthday)
-
     temp_message = await callback.message.edit_text(User.ASK_BIRTHDATE)
-
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
 
 
 @router.message(ChangeProfile.birthday)
 async def change_date_of_birth(message: Message, state: FSMContext):
     await message.delete()
-
     date_str = message.text.strip()
-    is_valid, result = validate_birthdate(date_str)
-    if not is_valid:
-        temp_message = await message.answer(result) 
+    try:
+        validate_birthdate(date_str)
+    except InvalidDateFormat:
+        temp_message = await message.answer('Неправильный формат')
         await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
-
+        return
+    except FutureBirthDate:
+        temp_message = await message.answer('Возраст слишком маленький')
+        await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
+        return
+    except AgeLimit:
+        temp_message = await message.answer('Возраст слишком большой')
+        await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
         return
 
     await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
-
-    await user_repo.update_fio(message.from_user.id, datetime.strftime(result,'%d.%m.%Y'))
-
+    await user_repo.update_date_of_birth(message.from_user.id, datetime.strptime(date_str,'%d.%m.%Y'))
     await message.answer('✅ Дата рождения измененна')
-
     await state.clear()
 
 

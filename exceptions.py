@@ -12,3 +12,7 @@ class FutureBirthDate(Exception):
 
 class AgeLimit(Exception):
     pass
+
+
+class InvalidDateFormat(Exception):
+    pass
