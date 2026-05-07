@@ -1,41 +1,37 @@
 import asyncio
-import sys
-import time
 from datetime import datetime
 
-from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
-from aiogram.client.default import DefaultBotProperties
+import pymongo
 
-from dateutil.relativedelta import relativedelta 
+from database.requests_bd import collection_user_waiting_alerts # type: ignore
+from database.repository import PurchasesRepository, UserRepository, WaitingAlertsRepository
 
-sys.path.append('../../database')
-sys.path.append('../../')
 
-from requests_bd import collection_users, collection_user_waiting_alerts # type: ignore
-from config import TG_TOKEN
-
-#TODO Одна функ записывает в коллекцию id которым надо отправить аллерт прям щас А второя функ читает эту коллекцию и отправляет 
 #TODO try-except 
 #TODO если у пользователя 0 или меньше дней?
+purchases_repo = PurchasesRepository()
+user_repo = UserRepository()
+alerts_repo = WaitingAlertsRepository()
+
 
 async def fetch_user_for_payment_alerts():
     while True:
         today_date = datetime.today()
-        users = await collection_users.find(filter={}).to_list()
-        print(users)
+        purchases = await purchases_repo.get_all()
+        users = await user_repo.get_all()
 
-        for user in users:
-            print(user)
-            days_left = (datetime.strptime(user['expiration_date'], "%d.%m.%Y") - today_date).days
-            print(days_left)
-
-            if days_left in user['notification_days_period']:
-                await collection_user_waiting_alerts.insert_one({'tg_id': user['tg_id'], 'days_left': days_left})
-
-        asyncio.sleep(60)
-
-
+        for purchase, user in zip(purchases, users):
+            days_left = (purchase['expiration_date'] - today_date).days
+            if days_left in user['notification_days_period'] or days_left==0:
+                if await alerts_repo.find_one_by_id(user['tg_id']):
+                    await alerts_repo.update_one(user['tg_id'], days_left)
+                else:
+                    try: 
+                        await alerts_repo.insert_one(user['tg_id'], days_left)
+                    except pymongo.errors.DuplicateKeyError:
+                        print('Ашибка в дубликации ключа')
+# сделать проверку раз в день
+        await asyncio.sleep(10)
 
 
 asyncio.run(fetch_user_for_payment_alerts())

@@ -28,14 +28,32 @@ class PriceRepository:
 
 
 class PurchasesRepository:
+    async def get_all(self):
+        return await collection_purchases.find(filter={}).to_list()
+    
+
     async def get_by_user_id(self, tg_id):
         return await collection_purchases.find(filter={'tg_id': tg_id}).to_list()
     
 
-    async def update_membership(self, tg_id, date_purchase, expiration_date):
-        res = await collection_purchases.update_one(filter={'tg_id': tg_id}, 
-                                          update={'$set': {'purchase_date': date_purchase, 
-                                                           'expiration_date': expiration_date}})
+    async def update_membership(self, tg_id, purchase_date, expiration_date, month, amount):
+        res = await collection_purchases.update_one(
+            filter={'tg_id': tg_id}, 
+            update={
+                '$set':{   
+                    'purchase_date': purchase_date, 
+                    'expiration_date': expiration_date
+                },
+                '$push':{
+                    'history':{
+                        'month': month,
+                        'amount': amount,
+                        'purchase_date': purchase_date
+                    }
+                }
+            }
+        )
+
         return res
     
 
@@ -43,23 +61,41 @@ class PurchasesRepository:
         return await collection_purchases.find_one(filter={'tg_id': tg_id})
 
 
-    async def find_by_date(self, from_date, to_date):
-        return await collection_purchases.find(filter={'purchase_date': {'$gte':from_date, '$lte':to_date}}).to_list()
-    
+    async def find_by_date(self, from_date, to_date)->list[dict]:
+        print(from_date, to_date)
+        users_purchases = await collection_purchases.find().to_list()
+        purchases = []
+        for user_purchase in users_purchases:
+            for purchase in user_purchase['history']:
+                if from_date <= purchase['purchase_date'] <= to_date:
+                    purchases.append(purchase)
+
+        return purchases
 
     async def insert_purchase(self, tg_id, month, amount, date, expiration_date):
-        res = await collection_purchases.insert_one({
-            "tg_id": tg_id,
-            "month": month,
-            "amount": amount,
-            "purchase_date": date,
-            "expiration_date": expiration_date
-        })
+        res = await collection_purchases.insert_one(
+            {
+                "tg_id": tg_id,
+                "history": [
+                    {
+                        "month": month,
+                        "amount": amount,
+                        "purchase_date": date
+                    }
+                ],
+                "purchase_date": date,
+                "expiration_date": expiration_date
+            }
+        )
 
         return res
     
 
 class UserRepository:
+    async def get_all(self):
+        return await collection_users.find(filter={}).to_list()
+    
+    
     async def find_one_by_id(self, tg_id):
         return await collection_users.find_one(filter={'tg_id': tg_id})
 
@@ -90,6 +126,14 @@ class UserRepository:
 class NotificationRepository:
     async def find_one(self):
         return await collection_notification.find_one(filter={})
+    
+
+    async def insert_one(self, tg_id):
+        return await collection_notification.insert_one({'tg_id': tg_id, 'notification_days_period': []})
+
+
+    async def add_notification_days_period(self, tg_id, day):
+        return await collection_notification.update_one(filter={'tg_id': tg_id}, update={'$push': {'notification_days_period': day}})
 
 
 class TempMessageRepository:
@@ -108,11 +152,21 @@ class TempMessageRepository:
 
     async def delete_temp_messages(self, tg_id, chat_id, bot):
         temp_messages = await self.get_temp_message_ids(tg_id)
-        
+
         await collection_temp_message_ids.update_one(filter={'tg_id': tg_id}, update={'$set':{'temp_message_ids': []}})
 
         for temp_message in temp_messages:
             await bot.delete_message(chat_id, temp_message)
 
 
+class WaitingAlertsRepository:
+    async def find_one_by_id(self, tg_id):
+        return await collection_user_waiting_alerts.find_one(filter={'tg_id': tg_id})
+
+
+    async def insert_one(self, tg_id, days_left):
+        await collection_user_waiting_alerts.insert_one({'tg_id': tg_id, 'days_left': days_left})
+
     
+    async def update_one(self, tg_id, days_left):
+        await collection_user_waiting_alerts.update_one(filter={'tg_id': tg_id}, update={'$set': {'days_left': days_left}})
