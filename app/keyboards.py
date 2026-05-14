@@ -65,8 +65,7 @@ def get_main_menu_keyboards(isAdmin:bool):
         
     admin_menu = ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text='Редактирование прайса 🔧 ')], 
-        [KeyboardButton(text='Статистика 📊')],
-        [KeyboardButton(text='Просмотр всех оплат 💰')]
+        [KeyboardButton(text='Статистика 📊')]
     ], resize_keyboard=True)
 
     if isAdmin == True:
@@ -156,6 +155,10 @@ def get_year_select_keyboard():
 
 kb_cancel_select = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Отмена', callback_data='cancel_select')]
+])
+
+kb_cancel_edit = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Отмена', callback_data='cancel_edit')]
 ])
 
 kb_formatter_report = InlineKeyboardMarkup(inline_keyboard=[

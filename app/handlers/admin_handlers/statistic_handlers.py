@@ -99,7 +99,7 @@ async def handle_month_btn(callback: CallbackQuery, state: FSMContext):
 async def statistic_custom_period(callback: CallbackQuery, state: FSMContext):
     await state.set_state(StatisticData.custom_period)
 
-    temp_message = await callback.message.edit_text(AdminStats.ASK_CUSTOM_PERIOD, reply_markup=kb.kb_cancel_select)
+    temp_message = await callback.message.edit_text(AdminStats.ASK_CUSTOM_PERIOD, reply_markup=kb.kb_cancel_select, parse_mode='Markdown')
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
 
     await callback.answer('')
@@ -108,17 +108,14 @@ async def statistic_custom_period(callback: CallbackQuery, state: FSMContext):
 @router.message(StatisticData.custom_period)
 async def handle_custom_period_text(message: Message, state: FSMContext):
     try:
-        start_period = dt.strptime(message.text.split(' - ')[0], '%d.%m.%Y')
+        start_period = dt.strptime(message.text.replace(' ', '').split('-')[0], '%d.%m.%Y')
     except:
         await message.delete()
-
         temp_message = await message.answer(AdminStats.INVALID_FROM_DATE)
         await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
-
         return
-    
     try:
-        end_period = dt.strptime(message.text.split(' - ')[1], '%d.%m.%Y')
+        end_period = dt.strptime(message.text.replace(' ', '').split('-')[1]+' 23:59', '%d.%m.%Y %H:%M')
     except:
         await message.delete()
 
@@ -136,11 +133,8 @@ async def handle_custom_period_text(message: Message, state: FSMContext):
         return 
     
     await state.update_data(from_date=start_period, to_date=end_period)
-
     await message.delete()
-
     await temp_message_repo.delete_temp_messages(message.from_user.id, message.chat.id, bot)
-    
     await message.answer(AdminStats.CHOOSE_REPORT_FORMAT, reply_markup=kb.kb_formatter_report)
 
    
@@ -150,8 +144,6 @@ async def statistic_quarter(callback : CallbackQuery, state: FSMContext):
     temp_message = await callback.message.edit_text(AdminStats.ASK_QUARTER, reply_markup=kb.get_quarter_select_keybord())
     
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
-
-
     await callback.answer()
 
 
@@ -212,11 +204,11 @@ async def handle_year_btn(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(F.data == 'cancel_select')
-async def cancel_select(callback: CallbackQuery):
+async def cancel_select(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text('📈 Выберите интересуемый период:', reply_markup=kb.kb_menu_statistics)
 
     await temp_message_repo.delete_temp_messages(callback.from_user.id, callback.message.chat.id, bot)
-
+    await state.clear()
 
 @router.callback_query(F.data=='short_report')
 async def short_report(callback: CallbackQuery, state: FSMContext):

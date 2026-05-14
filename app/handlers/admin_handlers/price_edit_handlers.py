@@ -28,9 +28,7 @@ async def editing_price(message: Message):
     await message.delete()
 
     prices = await price_repo.get_all_prices()
-
     months = [month['month'] for month in prices]
-
     temp_message = await message.answer(generate_price_text(prices), reply_markup=kb.create_admin_price_list(months))
     await temp_message_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
    
@@ -44,7 +42,7 @@ async def select_price_action(callback: CallbackQuery, state: FSMContext):
     await state.update_data(month=month, amount=amount['price'])
 
     await callback.message.edit_text(
-        f'<b>{generate_price_text_by_month(month, amount['price'])}</b>', 
+        f'<b>{generate_price_text_by_month(month, amount['price'])}</b>\n{AdminPrice.ASK_NEW_PERIOD}', 
         reply_markup=kb.kb_edit_price_list
     )
     await callback.answer('')
@@ -54,7 +52,7 @@ async def select_price_action(callback: CallbackQuery, state: FSMContext):
 async def update_price_btn(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Data.update_price)
 
-    temp_message = await callback.message.answer(AdminPrice.ASK_NEW_PERIOD, kb.kb_cancel_select)
+    temp_message = await callback.message.answer(AdminPrice.ASK_NEW_PERIOD, reply_markup=kb.kb_cancel_edit)
     await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
 
     await callback.answer('')
@@ -118,12 +116,12 @@ async def remove_price(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'cancel_edit')
 async def cancel_price(callback: CallbackQuery, state: FSMContext):
-    current_price_data = await price_repo.get_all_prices()
-    current_price_list = generate_price_text(current_price_data)
-    months = [month['month'] for month in current_price_data]
+    prices = await price_repo.get_all_prices()
+    months = [month['month'] for month in prices]
+    temp_message = await callback.message.edit_text(generate_price_text(prices), reply_markup=kb.create_admin_price_list(months))
 
-    await callback.message.edit_text(current_price_list, reply_markup=kb.create_admin_price_list(months))
-    await callback.answer('')
+    await temp_message_repo.add_temp_message_id(callback.from_user.id, temp_message.message_id)
+    await callback.answer('Отмена')
     await state.clear()
 
 
