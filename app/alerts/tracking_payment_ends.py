@@ -3,12 +3,10 @@ from datetime import datetime
 
 import pymongo
 
-from database.requests_bd import collection_user_waiting_alerts # type: ignore
 from database.repository import PurchasesRepository, UserRepository, WaitingAlertsRepository
+from config import PAYMENT_ENDS_CHECK_DELAY
 
 
-#TODO try-except 
-#TODO если у пользователя 0 или меньше дней?
 purchases_repo = PurchasesRepository()
 user_repo = UserRepository()
 alerts_repo = WaitingAlertsRepository()
@@ -31,7 +29,7 @@ async def fetch_user_for_payment_alerts():
                     except pymongo.errors.DuplicateKeyError:
                         print('Ашибка в дубликации ключа')
 # сделать проверку раз в день
-        await asyncio.sleep(10)
+        await asyncio.sleep(PAYMENT_ENDS_CHECK_DELAY)
 
 
 asyncio.run(fetch_user_for_payment_alerts())
