@@ -5,12 +5,10 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from init import bot
 import app.keyboards as kb
 from formatters import generate_price_text
 from database.repository import PriceRepository, PurchasesRepository, TempMessageRepository
 from app.messages import User
-from app.handlers.user_handlers.user_states import BuyMembership
 
 
 
@@ -29,7 +27,6 @@ async def get_price(message: Message):
     price_data = await price_repo.get_all_prices()
 
     price_list = generate_price_text(price_data)
-    
 
     months = [month['month'] for month in price_data]
 
@@ -40,10 +37,10 @@ async def get_price(message: Message):
 async def buy_membership(callback: CallbackQuery, state: FSMContext):
     today_date = datetime.now()
     purchase_data = await purchase_repo.find_one_by_id(callback.from_user.id)
-    month = int(callback.data.split("_")[1])
-    price_data = await price_repo.get_by_month(month)
+    month_count = int(callback.data.split("_")[1])
+    price_data = await price_repo.get_by_month(month_count)
 
-    await state.update_data(month=month, amount=price_data["price"])
+    await state.update_data(month_count=month_count, amount=price_data["price"])
 
     if purchase_data and purchase_data['expiration_date']>=today_date:
         expiration_date = purchase_data['expiration_date']
@@ -55,7 +52,7 @@ async def buy_membership(callback: CallbackQuery, state: FSMContext):
 
     else:
         await callback.message.edit_text(
-            User.CONFIRM_PURCHASE.format(month=month, price=price_data['price']), 
+            User.CONFIRM_PURCHASE.format(month=month_count, price=price_data['price']), 
             reply_markup=kb.confirmation_kb
         )
 
@@ -69,15 +66,20 @@ async def confirm_purchase(callback: CallbackQuery, state: FSMContext):
     purchase_data = await purchase_repo.find_one_by_id(callback.from_user.id)
 
     tg_id = callback.from_user.id
-    month = data["month"]
+    month_count= data["month_count"]
     amount = data["amount"]
     
     if purchase_data:
         old_expiration_date = purchase_data['expiration_date']
+        new_expiration_date = old_expiration_date + timedelta(days=30 * month_count) 
 
-        new_expiration_date = old_expiration_date + timedelta(days=30 * month) 
-
-        await purchase_repo.update_membership(callback.from_user.id, datetime.now(), new_expiration_date)
+        await purchase_repo.update_membership(
+            tg_id=callback.from_user.id, 
+            purchase_date=datetime.now(), 
+            expiration_date=new_expiration_date,
+            month=month_count, 
+            amount=amount
+        )
 
         await state.clear()
 
@@ -88,9 +90,9 @@ async def confirm_purchase(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
 
     else:
-        expiration_date = datetime.now() + timedelta(days=30 * month) 
+        expiration_date = datetime.now() + timedelta(days=30 * month_count) 
     
-        await purchase_repo.insert_purchase(tg_id, month, amount, datetime.now(), expiration_date)
+        await purchase_repo.insert_purchase(tg_id, month_count, amount, datetime.now(), expiration_date)
 
         await state.clear()
 

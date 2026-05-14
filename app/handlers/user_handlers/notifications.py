@@ -4,7 +4,6 @@ from aiogram.types import Message, CallbackQuery
 import app.keyboards as kb
 from database.repository import UserRepository, PriceRepository, NotificationRepository
 from app.messages import User
-from app.handlers.user_handlers.user_states import NotificationSettings
 
 
 
