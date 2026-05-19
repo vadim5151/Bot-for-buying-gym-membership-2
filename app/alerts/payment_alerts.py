@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from aiogram.exceptions import TelegramBadRequest
@@ -6,7 +7,8 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
-from config import TG_TOKEN
+from configs.tg_bot_config import TG_TOKEN
+from configs.logging_config import setup_logging
 
 
 
@@ -15,6 +17,7 @@ _client = AsyncIOMotorClient('localhost', port=27017)
 _conn = _client['Bot_for_buying_gym_membership']
 COLLECTION_USER_WAITING_ALERTS = _conn['User_waiting_alerts']
 
+setup_logging()
 
 def format_payment_alerts(days_left):
     text = 'До окончания вашего абонемента'
@@ -31,8 +34,9 @@ async def send_notification(tg_id: int, days_left: int) -> None:
         await BOT.send_message(chat_id=tg_id, text=format_payment_alerts(days_left))
         COLLECTION_USER_WAITING_ALERTS.delete_one(filter={'tg_id': tg_id})
     except TelegramBadRequest as e:
-        print(f'Не удалось отправить уведомление по id: {tg_id}\n{e.message}')
+        logging.error(msg=f'Не удалось отправить уведомление по id: {tg_id}\n{e.message}')
         if e.message == 'Bad Request: chat not found':
+            logging.info(msg='Пользователь удалил чат с ботом')
             COLLECTION_USER_WAITING_ALERTS.delete_one(filter={'tg_id': tg_id})
 
 #Если нормальные названия переменых, то комментарии не нужны - Боб Мартин так и писал!!!

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from aiogram import Dispatcher
 
@@ -10,13 +11,15 @@ from app.handlers.user_handlers.registration import router as registration_route
 from app.handlers.user_handlers.buy import router as buy_router
 from app.handlers.user_handlers.notifications import router as notifications_router
 from app.handlers.user_handlers.profile import router as profile_router
-
+from configs.logging_config import setup_logging
 
 
 dp = Dispatcher()
 
 
 async def main():
+    setup_logging()
+
     dp.include_router(statistic_router)
     dp.include_router(price_edit_router)
     dp.include_router(start_router)
@@ -32,6 +35,6 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print('Exit')
+        logging.info(msg='Выход из программы')
     
     

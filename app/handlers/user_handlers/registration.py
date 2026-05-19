@@ -1,5 +1,6 @@
 from datetime import datetime
 import traceback
+import logging
 
 from aiogram import Router
 from aiogram.types import Message
@@ -42,7 +43,7 @@ async def get_username(message: Message, state: FSMContext):
         message_text = User.INVALID_FULLNAME_WORD_COUNTS
     
     except Exception as e:
-        print(f'Error {e}')
+        logging.info(msg=f'Error {e}')
         message_text = User.UNEXPECTED_ERROR
 
 
@@ -69,7 +70,8 @@ async def get_date_of_birth(message: Message, state: FSMContext):
         message_text = User.AGE_TOO_HIGH
     
     except Exception as e:
-        print(f'Error {e}')
+
+        logging.info(msg=f'Error {e}')
         message_text = User.UNEXPECTED_ERROR
 
     await message.answer(message_text)

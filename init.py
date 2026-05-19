@@ -3,7 +3,7 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 
-from config import TG_TOKEN, PROXY_URL
+from configs.tg_bot_config import TG_TOKEN
 
 
 bot = Bot(token=TG_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))

@@ -1,16 +1,20 @@
 import asyncio
 from datetime import datetime
+import logging
 
 import pymongo
 
 from database.repository import PurchasesRepository, UserRepository, WaitingAlertsRepository
-from config import PAYMENT_ENDS_CHECK_DELAY
+from configs.alerts_config import PAYMENT_ENDS_CHECK_DELAY
+from configs.logging_config import setup_logging
+
 
 
 purchases_repo = PurchasesRepository()
 user_repo = UserRepository()
 alerts_repo = WaitingAlertsRepository()
 
+setup_logging()
 
 async def fetch_user_for_payment_alerts():
     while True:
@@ -27,7 +31,7 @@ async def fetch_user_for_payment_alerts():
                     try: 
                         await alerts_repo.insert_one(user['tg_id'], days_left)
                     except pymongo.errors.DuplicateKeyError:
-                        print('Ашибка в дубликации ключа')
+                        logging.error(msg='Ашибка в дубликации ключа')
 # сделать проверку раз в день
         await asyncio.sleep(PAYMENT_ENDS_CHECK_DELAY)
 

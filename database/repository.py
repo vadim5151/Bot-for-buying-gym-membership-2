@@ -62,7 +62,6 @@ class PurchasesRepository:
 
 
     async def find_by_date(self, from_date, to_date)->list[dict]:
-        print(from_date, to_date)
         users_purchases = await collection_purchases.find().to_list()
         purchases = []
         for user_purchase in users_purchases:
