@@ -1,8 +1,10 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from configs.db_config import db_uri
 
 
-client = AsyncIOMotorClient('localhost', port=27017)
+
+client = AsyncIOMotorClient(db_uri)
 
 conn = client['Bot_for_buying_gym_membership']
 
