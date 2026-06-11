@@ -11,6 +11,7 @@ from app.handlers.user_handlers.registration import router as registration_route
 from app.handlers.user_handlers.buy import router as buy_router
 from app.handlers.user_handlers.notifications import router as notifications_router
 from app.handlers.user_handlers.profile import router as profile_router
+from app.handlers.admin_handlers.notification_edit_handlers import router as notifications_edit_router
 from configs.logging_config import setup_logging
 
 
@@ -27,6 +28,7 @@ async def main():
     dp.include_router(buy_router)
     dp.include_router(notifications_router)
     dp.include_router(profile_router)
+    dp.include_router(notifications_edit_router)
 
     await dp.start_polling(bot)
 

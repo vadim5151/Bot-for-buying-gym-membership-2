@@ -6,10 +6,12 @@ from .user_handlers.registration import router as registration_router
 from .user_handlers.buy import router as buy_router
 from .user_handlers.notifications import router as notifications_router
 from .user_handlers.profile import router as profile_router
+from .admin_handlers.notification_edit_handlers import router as notifications_edit_router
 
 
 
 __all__ = [
+    'notifications_edit_router',
     'price_edit_router',
     'statistic_router', 
     'user_router',

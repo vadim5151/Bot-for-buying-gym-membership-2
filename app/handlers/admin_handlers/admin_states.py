@@ -9,5 +9,9 @@ class StatisticData(StatesGroup):
     custom_period = State()
 
 
+class NotitficationData(StatesGroup):
+    days = State()
+
+
 class PriceEditData(StatesGroup):
     pass

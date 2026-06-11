@@ -123,16 +123,20 @@ class UserRepository:
 
 
 class NotificationRepository:
+    async def delete_periods(self):
+        return await collection_notification.delete_one(filter={})
+    
+
     async def find_one(self):
         return await collection_notification.find_one(filter={})
     
 
-    async def insert_one(self, tg_id):
-        return await collection_notification.insert_one({'tg_id': tg_id, 'notification_days_period': []})
+    async def insert_one(self, days):
+        return await collection_notification.insert_one({'notification_days_period': days})
 
 
-    async def add_notification_days_period(self, tg_id, day):
-        return await collection_notification.update_one(filter={'tg_id': tg_id}, update={'$push': {'notification_days_period': day}})
+    async def add_notification_days_period(self, day):
+        return await collection_notification.update_one(filter={}, update={'$push': {'notification_days_period': day}})
 
 
 class TempMessageRepository:

@@ -90,3 +90,8 @@ class AdminPrice:
     # Текст при отображении прайс-листа (можно дополнить в formatters.py)
     PRICE_LIST_HEADER = "📋 Текущий прайс-лист:\n\n"
 
+class AdminNotification:
+    ASK_PERIODS_ADDED_MANUALLY = 'Напишите периоды которые хотите добавить (Пример: 1 7)'
+    PERIODS_ADDED_MANUALLY = 'Периоды успешно добавлены'
+    PERIODS_ADDED_AUTOMATICALLY = 'Периоды автоматически добавлены'
+    NOTIFICATION_SETTINGS = 'Вы можете добавить периоды автоматически или вручную'

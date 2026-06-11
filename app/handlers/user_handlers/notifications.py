@@ -19,7 +19,7 @@ async def setting_notifications_payments(message: Message):
     await message.delete()
 
     available_notificatons = await notification_repo.find_one()
-    available_notificatons = available_notificatons['available_periods']
+    available_notificatons = available_notificatons['notification_days_period']
 
     user_periods = await user_repo.find_one_by_id(message.from_user.id)
     user_periods = user_periods['notification_days_period']

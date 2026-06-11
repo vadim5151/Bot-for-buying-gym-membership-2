@@ -65,7 +65,8 @@ def get_main_menu_keyboards(isAdmin:bool):
         
     admin_menu = ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text='Редактирование прайса 🔧 ')], 
-        [KeyboardButton(text='Статистика 📊')]
+        [KeyboardButton(text='Статистика 📊')],
+        [KeyboardButton(text='Редактирование уведомлений ✏️')]
     ], resize_keyboard=True)
 
     if isAdmin == True:
@@ -206,5 +207,16 @@ change_registration = InlineKeyboardMarkup(inline_keyboard=[
     [
     InlineKeyboardButton(text='Изменить ФИО', callback_data='change_fio'),
     InlineKeyboardButton(text='Изменить дату рождения', callback_data='change_date_of_birth')
+    ]
+])
+
+
+notification_edit_btn = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text='Вручную', callback_data='manually'),
+        InlineKeyboardButton(text='Автоматически', callback_data='automatically')
+    ],
+    [
+        InlineKeyboardButton(text='Удалить периоды', callback_data='delete_periods')
     ]
 ])
