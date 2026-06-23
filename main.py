@@ -3,7 +3,7 @@ import logging
 
 from aiogram import Dispatcher
 
-from init import bot
+from __init__ import bot
 from app.handlers.admin_handlers.price_edit_handlers import router as price_edit_router
 from app.handlers.admin_handlers.statistic_handlers import router as statistic_router
 from app.handlers.user_handlers.start import router as start_router

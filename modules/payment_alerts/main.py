@@ -9,11 +9,12 @@ from aiogram.client.default import DefaultBotProperties
 
 from configs.tg_bot_config import TG_TOKEN
 from configs.logging_config import setup_logging
+from configs.db_config import db_uri
 
 
 
 BOT = Bot(token=TG_TOKEN,  default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-_client = AsyncIOMotorClient('localhost', port=27017)
+_client = AsyncIOMotorClient(db_uri)
 _conn = _client['Bot_for_buying_gym_membership']
 COLLECTION_USER_WAITING_ALERTS = _conn['User_waiting_alerts']
 
@@ -29,7 +30,9 @@ def format_payment_alerts(days_left):
         text+=f'осталось {days_left} дней'
     return text
 
+
 async def send_notification(tg_id: int, days_left: int) -> None:
+    logging.info(msg='Сообщения начали отправляться.')
     try:
         await BOT.send_message(chat_id=tg_id, text=format_payment_alerts(days_left))
         COLLECTION_USER_WAITING_ALERTS.delete_one(filter={'tg_id': tg_id})
@@ -39,7 +42,7 @@ async def send_notification(tg_id: int, days_left: int) -> None:
             logging.info(msg='Пользователь удалил чат с ботом')
             COLLECTION_USER_WAITING_ALERTS.delete_one(filter={'tg_id': tg_id})
 
-#Если нормальные названия переменых, то комментарии не нужны - Боб Мартин так и писал!!!
+
 async def process_old_doc() -> None:
     all_doc = await COLLECTION_USER_WAITING_ALERTS.find().to_list()
     for doc in all_doc:

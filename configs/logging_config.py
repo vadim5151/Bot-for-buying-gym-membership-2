@@ -3,7 +3,7 @@ import sys
 
 
 
-def setup_logging(level=logging.WARNING):
+def setup_logging(level=logging.INFO):
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',

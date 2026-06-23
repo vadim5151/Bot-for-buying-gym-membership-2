@@ -6,7 +6,7 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from init import bot
+from __init__ import bot
 import app.keyboards as kb
 from database.repository import UserRepository, TempMessageRepository
 from app.messages import User

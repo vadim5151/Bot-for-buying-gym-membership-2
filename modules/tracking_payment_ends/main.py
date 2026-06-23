@@ -10,11 +10,13 @@ from configs.logging_config import setup_logging
 
 
 
+setup_logging()
+
 purchases_repo = PurchasesRepository()
 user_repo = UserRepository()
 alerts_repo = WaitingAlertsRepository()
 
-setup_logging()
+logging.info(msg='Успешное подключение к бд')
 
 async def fetch_user_for_payment_alerts():
     while True:
@@ -31,8 +33,8 @@ async def fetch_user_for_payment_alerts():
                     try: 
                         await alerts_repo.insert_one(user['tg_id'], days_left)
                     except pymongo.errors.DuplicateKeyError:
-                        logging.error(msg='Ашибка в дубликации ключа')
-# сделать проверку раз в день
+                        logging.error(msg='Ошибка в дубликации ключа')
+        logging.info(msg='Проверка окончания оплат совершена')
         await asyncio.sleep(PAYMENT_ENDS_CHECK_DELAY)
 
 

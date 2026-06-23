@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup,State
 from aiogram.fsm.context import FSMContext
 
-from init import bot
+from __init__ import bot
 from formatters import generate_price_text, generate_price_text_by_month
 import app.keyboards as kb
 from database.repository import PriceRepository, TempMessageRepository
