@@ -11,7 +11,6 @@ RUN pip install --no-cache-dir -r modules/tracking_payment_ends/requirements.txt
 
 COPY database/ database/
 
-COPY configs/alerts_config.py configs/
 COPY configs/logging_config.py configs/
 COPY configs/db_config.py configs/
 
