@@ -2,13 +2,12 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta 
 
-from exceptions import InvalidFullName, InvalidFullNameWordCounts, FutureBirthDate, AgeLimit, InvalidDateFormat
+from modules.tg_bot.exceptions import InvalidFullName, InvalidFullNameWordCounts, FutureBirthDate, AgeLimit, InvalidDateFormat
 
 
 
 MIN_AGE = 5      
 MAX_AGE = 120    
-
 
 def validate_full_name(full_name):
     parts = full_name.split(' ')

@@ -1,9 +1,9 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 
-import app.keyboards as kb
 from database.repository import UserRepository, PriceRepository, NotificationRepository
-from app.messages import User
+from modules.tg_bot.app.messages import User
+import modules.tg_bot.app.keyboards as kb
 
 
 
@@ -12,7 +12,6 @@ router = Router()
 user_repo = UserRepository()
 price_repo = PriceRepository()
 notification_repo = NotificationRepository()
-
 
 @router.message(F.text == 'Настройка уведомлений')
 async def setting_notifications_payments(message: Message):

@@ -5,10 +5,10 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-import app.keyboards as kb
-from formatters import generate_price_text
+from modules.tg_bot.formatters import generate_price_text
+from modules.tg_bot.app.messages import User
 from database.repository import PriceRepository, PurchasesRepository, TempMessageRepository
-from app.messages import User
+import modules.tg_bot.app.keyboards as kb
 
 
 
@@ -17,7 +17,6 @@ router = Router()
 price_repo = PriceRepository()
 purchase_repo = PurchasesRepository()
 temp_message_repo = TempMessageRepository()
-
 
 @router.message(Command('price'))
 @router.message(F.text == 'Прайс')

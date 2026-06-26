@@ -4,13 +4,25 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from __init__ import bot
-import app.keyboards as kb
-from database.repository import UserRepository, PriceRepository, NotificationRepository, PurchasesRepository, TempMessageRepository
-from app.messages import User
-from app.handlers.user_handlers.user_states import ChangeProfile
-from validators import validate_full_name, validate_birthdate
-from exceptions import InvalidFullName, InvalidFullNameWordCounts, FutureBirthDate, AgeLimit, InvalidDateFormat
+from modules.tg_bot.__init__ import bot
+from modules.tg_bot.app.messages import User
+from modules.tg_bot.app.handlers.user_handlers.user_states import ChangeProfile
+from modules.tg_bot.validators import validate_full_name, validate_birthdate
+from modules.tg_bot.exceptions import (
+    InvalidFullName,
+    InvalidFullNameWordCounts,
+    FutureBirthDate, 
+    AgeLimit,
+    InvalidDateFormat
+)
+from database.repository import (
+    UserRepository,
+    PriceRepository, 
+    NotificationRepository, 
+    PurchasesRepository, 
+    TempMessageRepository   
+)
+import modules.tg_bot.app.keyboards as kb
 
 
 
@@ -21,7 +33,6 @@ price_repo = PriceRepository()
 notification_repo = NotificationRepository()
 purchase_repo = PurchasesRepository()
 temp_message_repo = TempMessageRepository()
-
 
 @router.message(F.text == "Мой профиль")
 async def show_profile(message: Message):

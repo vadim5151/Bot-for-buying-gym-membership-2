@@ -65,8 +65,6 @@ def generate_short_report(all_purchases:list[dict]) -> str:
     return text
 
 
-
-
 def format_cheque(month, today_date, new_expiration_date, amount):
     cheque = ''
 

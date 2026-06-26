@@ -5,12 +5,12 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup,State
 from aiogram.fsm.context import FSMContext
 
-from __init__ import bot
-from formatters import generate_price_text, generate_price_text_by_month
-import app.keyboards as kb
+from modules.tg_bot.__init__ import bot
+from modules.tg_bot.formatters import generate_price_text, generate_price_text_by_month
 from database.repository import PriceRepository, TempMessageRepository
-from app.messages import AdminPrice
-from validators import validate_price_period
+from modules.tg_bot.app.messages import AdminPrice
+from modules.tg_bot.validators import validate_price_period
+import modules.tg_bot.app.keyboards as kb
 
 
 

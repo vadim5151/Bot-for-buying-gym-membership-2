@@ -1,7 +1,4 @@
-import logging
-
 from motor.motor_asyncio import AsyncIOMotorClient
-import pymongo
 
 from configs.db_config import db_uri
 

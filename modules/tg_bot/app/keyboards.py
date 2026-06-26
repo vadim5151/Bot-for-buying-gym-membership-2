@@ -1,11 +1,14 @@
 from datetime import datetime as dt, timedelta
 
-from aiogram.types import (InlineKeyboardMarkup, InlineKeyboardButton,
-                           ReplyKeyboardMarkup, KeyboardButton)
+from aiogram.types import (
+    InlineKeyboardMarkup, 
+    InlineKeyboardButton,
+    ReplyKeyboardMarkup, 
+    KeyboardButton
+)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-
-from utils import quarter_num_to_names, month_names
+from modules.tg_bot.utils import quarter_num_to_names, month_names
 
 
 

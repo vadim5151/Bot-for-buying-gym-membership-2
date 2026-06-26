@@ -1,15 +1,11 @@
-import asyncio 
-
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.state import StatesGroup,State
 from aiogram.fsm.context import FSMContext
 
-from init import bot
-import app.keyboards as kb
 from database.repository import NotificationRepository
-from app.messages import AdminNotification
-from app.handlers.admin_handlers.admin_states import NotitficationData
+from modules.tg_bot.app.messages import AdminNotification
+from modules.tg_bot.app.handlers.admin_handlers.admin_states import NotitficationData
+import modules.tg_bot.app.keyboards as kb
 
 
 

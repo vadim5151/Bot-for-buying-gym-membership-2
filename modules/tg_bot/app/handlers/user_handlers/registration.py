@@ -1,19 +1,23 @@
 from datetime import datetime
-import traceback
 import logging
 
 from aiogram import Router
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from __init__ import bot
-import app.keyboards as kb
+from modules.tg_bot.__init__ import bot
 from database.repository import UserRepository, TempMessageRepository
-from app.messages import User
-from app.handlers.user_handlers.user_states import Registration
-from validators import validate_full_name, validate_birthdate
-from app.messages import User
-from exceptions import InvalidFullName, InvalidFullNameWordCounts, AgeLimit, FutureBirthDate
+from modules.tg_bot.app.messages import User
+from modules.tg_bot.app.handlers.user_handlers.user_states import Registration
+from modules.tg_bot.validators import validate_full_name, validate_birthdate
+from modules.tg_bot.app.messages import User
+from modules.tg_bot.exceptions import (
+    InvalidFullName,
+    InvalidFullNameWordCounts, 
+    AgeLimit, 
+    FutureBirthDate
+)
+import modules.tg_bot.app.keyboards as kb
 
 
 
@@ -21,7 +25,6 @@ router = Router()
 
 user_repo = UserRepository()
 temp_message_repo = TempMessageRepository()
-
 
 
 @router.message(Registration.name)

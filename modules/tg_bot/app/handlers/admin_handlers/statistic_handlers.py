@@ -6,24 +6,22 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from init import bot
-from formatters import generate_short_report
-import app.keyboards as kb
-from services.excel_reports import generate_excel_report
+from modules.tg_bot.__init__ import bot
+from modules.tg_bot.formatters import generate_short_report
+from modules.tg_bot.excel_reports import generate_excel_report
+from modules.tg_bot.app.messages import AdminStats, Common
+from modules.tg_bot.app.handlers.admin_handlers.admin_states import StatisticData
+from modules.tg_bot.utils import month_numbers, quarter_to_date_range
+from modules.tg_bot.validators import validate_month
 from database.repository import PurchasesRepository, TempMessageRepository
-from app.messages import AdminStats, Common
-from app.handlers.admin_handlers.admin_states import StatisticData
-from utils import month_numbers, quarter_names_to_num, quarter_to_date_range
-from validators import validate_month
+import modules.tg_bot.app.keyboards as kb
 
-from pprint import pprint
 
 
 router = Router()
 
 purchases_repo = PurchasesRepository()
 temp_message_repo = TempMessageRepository()
-
 
 @router.message(F.text == 'Статистика 📊')
 async def menu_statistics(message: Message):

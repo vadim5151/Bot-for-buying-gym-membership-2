@@ -4,10 +4,10 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-import app.keyboards as kb
 from database.repository import UserRepository, TempMessageRepository
-from app.messages import User
-from app.handlers.user_handlers.user_states import Registration
+from modules.tg_bot.app.messages import User
+from modules.tg_bot.app.handlers.user_handlers.user_states import Registration
+import modules.tg_bot.app.keyboards as kb
 
 
 
@@ -15,7 +15,6 @@ router = Router()
 
 user_repo = UserRepository()
 temp_message_repo = TempMessageRepository()
-
 
 @router.message(Command('start'))
 @router.message(CommandStart())
