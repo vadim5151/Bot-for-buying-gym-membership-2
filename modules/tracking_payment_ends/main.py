@@ -4,7 +4,7 @@ import logging
 
 import pymongo
 
-from database.repository import PurchasesRepository, UserRepository, WaitingAlertsRepository
+from database.repository import UserRepository, WaitingAlertsRepository
 from config import PAYMENT_ENDS_CHECK_DELAY
 from configs.logging_config import setup_logging
 
@@ -12,7 +12,6 @@ from configs.logging_config import setup_logging
 
 setup_logging()
 
-purchases_repo = PurchasesRepository()
 user_repo = UserRepository()
 alerts_repo = WaitingAlertsRepository()
 
@@ -21,9 +20,8 @@ logging.info(msg='Успешное подключение к бд')
 async def fetch_user_for_payment_alerts():
     while True:
         today_date = datetime.today()
-        purchases = await purchases_repo.get_all()
+        purchases = await user_repo.get_all()
         users = await user_repo.get_all()
-
         for purchase, user in zip(purchases, users):
             days_left = (purchase['expiration_date'] - today_date).days
             if days_left in user['notification_days_period'] or days_left==0:

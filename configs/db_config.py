@@ -1,1 +1,1 @@
-db_uri= 'mongodb://mongodb_bot_gym:27017/?directConnection=true'
+db_uri= 'mongodb://localhost:27018/?directConnection=true'

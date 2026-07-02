@@ -8,7 +8,6 @@ import modules.tg_bot.app.keyboards as kb
 
 
 router = Router()
-
 user_repo = UserRepository()
 price_repo = PriceRepository()
 notification_repo = NotificationRepository()

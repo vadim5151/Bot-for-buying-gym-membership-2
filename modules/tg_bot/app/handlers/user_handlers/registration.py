@@ -6,7 +6,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from modules.tg_bot.__init__ import bot
-from database.repository import UserRepository, TempMessageRepository
+from database.repository import UserRepository
 from modules.tg_bot.app.messages import User
 from modules.tg_bot.app.handlers.user_handlers.user_states import Registration
 from modules.tg_bot.validators import validate_full_name, validate_birthdate
@@ -22,84 +22,57 @@ import modules.tg_bot.app.keyboards as kb
 
 
 router = Router()
-
 user_repo = UserRepository()
-temp_message_repo = TempMessageRepository()
-
 
 @router.message(Registration.name)
 async def get_username(message: Message, state: FSMContext):
     await message.delete()
-
     try:
         full_name = message.text
-
         validate_full_name(full_name)
         await state.update_data(full_name=full_name)
         await state.set_state(Registration.birthdate)
         message_text = User.ASK_BIRTHDATE
-
     except InvalidFullName:
         message_text = User.INVALID_FULLNAME
-
     except InvalidFullNameWordCounts:
-        message_text = User.INVALID_FULLNAME_WORD_COUNTS
-    
+        message_text = User.INVALID_FULLNAME_WORD_COUNTS  
     except Exception as e:
-        logging.info(msg=f'Error {e}')
+        logging.error(msg=f'Error {e}')
         message_text = User.UNEXPECTED_ERROR
-
-
-    await message.answer(message_text)
+    temp_message = await message.answer(message_text)
+    await user_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
     
-
 
 @router.message(Registration.birthdate)
 async def get_date_of_birth(message: Message, state: FSMContext):
     await message.delete()
-
     date_str = message.text
-
     try:
         validate_birthdate(date_str)
         await state.update_data(birthday=date_str)
         await register(message, state)
-
         return
     except FutureBirthDate:
         message_text = User.FUTURE_BIRTHDATE
-    
     except AgeLimit:
         message_text = User.AGE_TOO_HIGH
-    
     except Exception as e:
-
-        logging.info(msg=f'Error {e}')
+        logging.exception(msg='Ошибка при вводе даты рождения')
         message_text = User.UNEXPECTED_ERROR
-
-    await message.answer(message_text)
+    temp_message = await message.answer(message_text)
+    await user_repo.add_temp_message_id(message.from_user.id, temp_message.message_id)
 
 
 async def register(message: Message, state: FSMContext):
-
     data = await state.get_data()
     full_name = data["full_name"]
     birthdate = data['birthday']
     tg_id = message.from_user.id
-
-    user = {
-            'tg_id': tg_id, 
-            'full_name': full_name,           
-            'date_of_birth': datetime.strptime(birthdate, '%d.%m.%Y'),
-            'is_admin': False,
-            'notification_days_period': [], 
-        }
-
-    await user_repo.insert_one(user)
+    await user_repo.update_fio(tg_id, full_name)
+    await user_repo.update_date_of_birth(tg_id, datetime.strptime(birthdate, '%d.%m.%Y'))
+    await user_repo.delete_temp_messages(tg_id, message.chat.id, bot) 
     await state.clear()
-
-    await temp_message_repo.delete_temp_messages(tg_id, message.chat.id, bot)
-    
     await message.answer(f"✅ Регистрация завершена!\n\n"
                 f"📋 Ваши данные:\n"
                 f"• ФИО: {full_name}\n"
