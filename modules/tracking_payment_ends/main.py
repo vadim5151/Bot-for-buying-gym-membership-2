@@ -21,10 +21,9 @@ logging.info(msg='Успешное подключение к бд')
 async def fetch_user_for_payment_alerts():
     while True:
         today_date = datetime.today()
-        purchases = await user_repo.get_all()
         users = await user_repo.get_all()
-        for purchase, user in zip(purchases, users):
-            days_left = (purchase['expiration_date'] - today_date).days
+        for user in users:
+            days_left = (user['expiration_date'] - today_date).days
             if days_left in user['notification_days_period'] or days_left==0:
                 if await alerts_repo.find_one_by_id(user['tg_id']):
                     await alerts_repo.update_one(user['tg_id'], days_left)
