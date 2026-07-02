@@ -1,7 +1,9 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 
-from database.repository import UserRepository, PriceRepository, NotificationRepository
+from database.repositories.price_repository import PriceRepository
+from database.repositories.user_repository import UserRepository
+from database.repositories.notification_repository import NotificationRepository
 from modules.tg_bot.app.messages import User
 import modules.tg_bot.app.keyboards as kb
 
@@ -15,10 +17,8 @@ notification_repo = NotificationRepository()
 @router.message(F.text == 'Настройка уведомлений')
 async def setting_notifications_payments(message: Message):
     await message.delete()
-
     available_notificatons = await notification_repo.find_one()
     available_notificatons = available_notificatons['notification_days_period']
-
     user_periods = await user_repo.find_one_by_id(message.from_user.id)
     user_periods = user_periods['notification_days_period']
 

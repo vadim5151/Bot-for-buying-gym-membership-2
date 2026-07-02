@@ -4,7 +4,8 @@ import logging
 
 import pymongo
 
-from database.repository import UserRepository, WaitingAlertsRepository
+from database.repositories.user_repository import UserRepository
+from database.repositories.waiting_alerts_repository import WaitingAlertsRepository
 from config import PAYMENT_ENDS_CHECK_DELAY
 from configs.logging_config import setup_logging
 

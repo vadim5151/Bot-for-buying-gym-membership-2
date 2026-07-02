@@ -4,7 +4,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from database.repository import UserRepository
+from database.repositories.user_repository import UserRepository
 from modules.tg_bot.app.messages import User
 from modules.tg_bot.app.handlers.user_handlers.user_states import Registration
 import modules.tg_bot.app.keyboards as kb

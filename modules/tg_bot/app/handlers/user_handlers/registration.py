@@ -6,7 +6,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from modules.tg_bot.__init__ import bot
-from database.repository import UserRepository
+from database.repositories.user_repository import UserRepository
 from modules.tg_bot.app.messages import User
 from modules.tg_bot.app.handlers.user_handlers.user_states import Registration
 from modules.tg_bot.validators import validate_full_name, validate_birthdate

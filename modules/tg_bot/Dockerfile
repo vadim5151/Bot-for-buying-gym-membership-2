@@ -9,7 +9,10 @@ COPY modules/tg_bot/requirements.txt modules/tg_bot/
 
 RUN pip install --no-cache-dir -r modules/tg_bot/requirements.txt
 
-COPY database/ database/
+COPY database/sessions.py database/
+COPY database/repositories/user_repository.py database/
+COPY database/repositories/price_repository.py database/
+COPY database/repositories/notification_reposytory.py database/
 
 COPY configs/logging_config.py configs/
 COPY configs/db_config.py configs/

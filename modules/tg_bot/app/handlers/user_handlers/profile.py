@@ -15,11 +15,9 @@ from modules.tg_bot.exceptions import (
     AgeLimit,
     InvalidDateFormat
 )
-from database.repository import (
-    UserRepository,
-    PriceRepository, 
-    NotificationRepository
-)
+from database.repositories.user_repository import UserRepository
+from database.repositories.price_repository import PriceRepository
+from database.repositories.notification_repository import NotificationRepository
 import modules.tg_bot.app.keyboards as kb
 
 
@@ -35,7 +33,8 @@ async def show_profile(message: Message):
     tg_id = message.from_user.id
     user = await user_repo.find_one_by_id(tg_id)
     if not user:
-        await message.answer("Сначала зарегистрируйтесь через /start")
+        temp_message = await message.answer("Сначала зарегистрируйтесь через /start")
+        await user_repo.add_temp_message_id(tg_id, temp_message.message_id)
         return
     # Последняя активная покупка (по дате окончания)
     purchases = await user_repo.get_by_user_id(tg_id)

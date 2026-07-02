@@ -7,7 +7,8 @@ from aiogram.fsm.context import FSMContext
 
 from modules.tg_bot.formatters import generate_price_text
 from modules.tg_bot.app.messages import User
-from database.repository import PriceRepository, UserRepository
+from database.repositories.user_repository import UserRepository
+from database.repositories.price_repository import PriceRepository
 import modules.tg_bot.app.keyboards as kb
 
 

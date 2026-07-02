@@ -7,7 +7,8 @@ from aiogram.fsm.context import FSMContext
 
 from modules.tg_bot.__init__ import bot
 from modules.tg_bot.formatters import generate_price_text, generate_price_text_by_month
-from database.repository import PriceRepository, UserRepository
+from database.repositories.user_repository import UserRepository
+from database.repositories.price_repository import PriceRepository
 from modules.tg_bot.app.messages import AdminPrice
 from modules.tg_bot.validators import validate_price_period
 import modules.tg_bot.app.keyboards as kb
@@ -88,6 +89,7 @@ async def update_price(message: Message, state: FSMContext):
     current_prices = await price_repo.get_all_prices()
     current_price_text = generate_price_text(current_prices)
     months = [month['month'] for month in current_prices]
+    await state.clear()
     await message.answer(current_price_text, reply_markup=kb.create_admin_price_list(months))
        
 

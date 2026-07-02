@@ -9,7 +9,8 @@ COPY modules/tracking_payment_ends/requirements.txt modules/tracking_payment_end
 
 RUN pip install --no-cache-dir -r modules/tracking_payment_ends/requirements.txt
 
-COPY database/ database/
+COPY database/sessions.py database/
+COPY database/repositories/waiting_alerts_repository.py database/
 
 COPY configs/logging_config.py configs/
 COPY configs/db_config.py configs/

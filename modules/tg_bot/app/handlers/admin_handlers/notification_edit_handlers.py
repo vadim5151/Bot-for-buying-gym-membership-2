@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from database.repository import NotificationRepository
+from database.repositories.notification_repository import NotificationRepository
 from modules.tg_bot.app.messages import AdminNotification
 from modules.tg_bot.app.handlers.admin_handlers.admin_states import NotitficationData
 import modules.tg_bot.app.keyboards as kb

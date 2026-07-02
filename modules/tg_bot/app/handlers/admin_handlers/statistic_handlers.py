@@ -13,7 +13,7 @@ from modules.tg_bot.app.messages import AdminStats, Common
 from modules.tg_bot.app.handlers.admin_handlers.admin_states import StatisticData
 from modules.tg_bot.utils import month_numbers, quarter_to_date_range
 from modules.tg_bot.validators import validate_month
-from database.repository import UserRepository
+from database.repositories.user_repository import UserRepository
 import modules.tg_bot.app.keyboards as kb
 
 
@@ -193,7 +193,7 @@ async def excel_report(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(AdminStats.REPORT_GENERATING_FULL_CUSTOM, parse_mode='Markdown')
     purchases = await user_repo.find_by_date(data['from_date'], data['to_date'])
     if purchases:
-        excel_report_file_path =  f'app/temp_docs/{callback.from_user.id}.xls'
+        excel_report_file_path =  f'modules/tg_bot/app/temp_docs/{callback.from_user.id}.xls'
         generate_excel_report(purchases, excel_report_file_path)
         await callback.message.answer_document(FSInputFile(excel_report_file_path))
         os.remove(excel_report_file_path)
