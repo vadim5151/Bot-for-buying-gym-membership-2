@@ -9,16 +9,17 @@ from aiogram.client.default import DefaultBotProperties
 
 from configs.tg_bot_config import TG_TOKEN
 from configs.logging_config import setup_logging
-from configs.db_config import db_uri
+from configs.db_config import db_alerts_uri
 
 
-
-BOT = Bot(token=TG_TOKEN,  default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-_client = AsyncIOMotorClient(db_uri)
-_conn = _client['Bot_for_buying_gym_membership']
-COLLECTION_USER_WAITING_ALERTS = _conn['User_waiting_alerts']
 
 setup_logging()
+
+BOT = Bot(token=TG_TOKEN,  default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+_client = AsyncIOMotorClient(db_alerts_uri)
+_conn = _client['bgm_alerts']
+COLLECTION_USER_WAITING_ALERTS = _conn['User_waiting_alerts']
+logging.info(msg='Успешное подключение к бд')
 
 def format_payment_alerts(days_left):
     text = 'До окончания вашего абонемента'
