@@ -62,8 +62,9 @@ def setting_notifications_payment_kb(available_periods, user_periods):
 
 def get_main_menu_keyboards(isAdmin:bool):
     user_menu = ReplyKeyboardMarkup(keyboard=[
-        [KeyboardButton(text='Прайс 💰'), KeyboardButton(text='Остатки по тарифу 📅')],
-        [KeyboardButton(text='Настройка уведомлений 🔔'), KeyboardButton(text='Мой профиль 👤')]
+        [KeyboardButton(text='Прайс 💰'), KeyboardButton(text='Мой профиль 👤')],
+        [KeyboardButton(text='Настройка уведомлений 🔔')],
+        [KeyboardButton(text='Остатки по тарифу 📅')]
     ], resize_keyboard=True)
         
     admin_menu = ReplyKeyboardMarkup(keyboard=[
